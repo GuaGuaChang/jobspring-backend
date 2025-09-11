@@ -1,0 +1,138 @@
+openapi: 3.0.3
+info:
+  title: JobSpring API
+  version: "0.1.0"
+  description: >
+    API contract for JobSpring.  
+
+servers:
+  - url: http://localhost:8080
+    description: Local Backend Server
+
+tags:
+  - name: Auth
+    description: Authentication related APIs
+
+paths:
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: "alice@example.com"
+              password: "Passw0rd!"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: User registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: "bob@example.com"
+              password: "Secret123!"
+              full_name: "Bob"
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "409":
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    RegisterRequest:
+      type: object
+      required: [email, password, full_name]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        full_name:
+          type: string
+          example: Bob
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token to access secured APIs
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+            email:
+              type: string
+              format: email
+            full_name:
+              type: string
+              example: Alice
+
+    Error:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: "Invalid input"
