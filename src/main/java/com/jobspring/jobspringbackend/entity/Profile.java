@@ -4,32 +4,26 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @Entity
-@Table(name = "applications")
-public class Application {
+@Table(name = "profiles")
+public class Profile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "job_id", nullable = false)
-    private Job job;
-
-    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "profile_id", nullable = false)
-    private Profile profile;
+    @Lob
+    private String summary;
 
     @Column(nullable = false)
-    private Integer status = 0;
+    private Integer visibility = 0; // 0=私有 1=公司可见 2=公开
 
-    private LocalDateTime appliedAt;
+    @Column(name = "file_url", length = 512)
+    private String fileUrl;
 }
