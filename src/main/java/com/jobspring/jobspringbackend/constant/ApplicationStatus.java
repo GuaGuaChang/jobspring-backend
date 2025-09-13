@@ -9,7 +9,8 @@ public class ApplicationStatus {
     public static final int REJECT = 5;
     public static final int WITHDREW = 6;
 
-    private ApplicationStatus(){}
+    private ApplicationStatus() {
+    }
 
     public static String getStatusName(int status) {
         return switch (status) {

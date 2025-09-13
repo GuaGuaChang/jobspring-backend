@@ -5,9 +5,10 @@ public class EmploymentType {
     public static final int INTERNSHIP = 2;         // 实习
     public static final int CONTRACT = 3;  //合同工
 
-    private EmploymentType() {}
+    private EmploymentType() {
+    }
 
-    public static String getEmploymentType(int employmentType){
+    public static String getEmploymentType(int employmentType) {
         return switch (employmentType) {
             case FULL_TIME -> "Full-time";
             case INTERNSHIP -> "Internship";
