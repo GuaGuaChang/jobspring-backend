@@ -13,7 +13,7 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    @Value("${SECURITY_JWT_SECRET}")
+    @Value("${SECURITY_JWT_SECRET:x4TgLq9z!mR2@N7uV6jYpQ0sWcE#Hb1KdFZt3XyG}")
     private String secret;
 
     private static final long EXP_MS = 1000L * 60 * 60 * 24 * 7; // 7 days
