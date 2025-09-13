@@ -5,7 +5,8 @@ public class Role {
     public static final int HR = 1;         // HR
     public static final int ADMIN = 2;      // Admin
 
-    private Role() {} // 防止实例化
+    private Role() {
+    } // 防止实例化
 
     public static String getRoleName(int role) {
         return switch (role) {
