@@ -1,6 +1,5 @@
 package com.jobspring.jobspringbackend.security;
 
-import com.jobspring.jobspringbackend.security.JwtService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
