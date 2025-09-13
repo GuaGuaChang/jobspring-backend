@@ -12,5 +12,8 @@ public class AuthResponseDTO {
         private Long id;
         private String email;
         private String fullName;
+
+        private String roleName; // e.g. "ROLE_CANDIDATE"
+        private Integer role;
     }
 }
