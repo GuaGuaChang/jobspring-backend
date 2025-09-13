@@ -1,6 +1,5 @@
 package com.jobspring.jobspringbackend.controller;
 
-import com.jobspring.jobspringbackend.dto.AuthResponseDTO;
 import com.jobspring.jobspringbackend.entity.User;
 import com.jobspring.jobspringbackend.repository.UserRepository;
 import com.jobspring.jobspringbackend.security.JwtService;
