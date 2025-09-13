@@ -1,8 +1,10 @@
 package com.jobspring.jobspringbackend.entity;
 
+import com.jobspring.jobspringbackend.constant.EmploymentType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -27,7 +29,7 @@ public class Job {
     private String location;
 
     @Column(nullable = false)
-    private Integer employmentType; // 1=全职 2=实习 3=合同工
+    private Integer employmentType = EmploymentType.FULL_TIME; // 1=全职 2=实习 3=合同工
 
     @Column(precision = 10, scale = 2)
     private BigDecimal salaryMin;
