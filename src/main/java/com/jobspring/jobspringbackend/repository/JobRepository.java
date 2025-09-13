@@ -16,7 +16,6 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     @Query("SELECT j FROM Job j WHERE j.status = 0 AND " +
             "(LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(j.location) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(j.employmentType) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(j.company.name) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Job> searchJobs(@Param("keyword") String keyword, Pageable pageable);
 
