@@ -14,13 +14,10 @@ public class SkillService {
     private SkillRepository skillRepository;
 
     public List<SkillDTO> listAll() {
-        return skillRepository.findAll()
-                .stream()
-                .map(this::ConvertToSkillDTO)
-                .toList();
+        return skillRepository.findAll().stream().map(this::convertToSkillDTO).toList();
     }
 
-    private SkillDTO ConvertToSkillDTO(Skill s) {
+    private SkillDTO convertToSkillDTO(Skill s) {
         SkillDTO dto = new SkillDTO();
         dto.setId(s.getId());
         dto.setName(s.getName());
