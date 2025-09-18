@@ -7,7 +7,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface SkillRepository extends JpaRepository<Skill, Long> {
@@ -19,5 +18,5 @@ public interface SkillRepository extends JpaRepository<Skill, Long> {
             "ORDER BY js.weight DESC")
     List<String> findSkillNamesByJobId(@Param("jobId") Long jobId);
 
-
+    List<Skill> findAll();
 }
