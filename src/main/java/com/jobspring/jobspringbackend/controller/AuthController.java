@@ -4,7 +4,11 @@ import com.jobspring.jobspringbackend.dto.LoginRequestDTO;
 import com.jobspring.jobspringbackend.dto.RegisterRequestDTO;
 import com.jobspring.jobspringbackend.dto.AuthResponseDTO;
 import com.jobspring.jobspringbackend.entity.User;
+import com.jobspring.jobspringbackend.exception.ConflictException;
 import com.jobspring.jobspringbackend.repository.UserRepository;
+import com.jobspring.jobspringbackend.security.JwtService;
+import com.jobspring.jobspringbackend.security.RoleMapper;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,9 +27,12 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private JwtService jwtService;
+
     // register
     @PostMapping("/register")
-    public ResponseEntity<AuthResponseDTO> register(@RequestBody RegisterRequestDTO request) {
+    public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
         // simple check
         if (request.getEmail() == null || request.getPassword() == null || request.getFullName() == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -44,24 +51,26 @@ public class AuthController {
 
         userRepository.save(user);
 
-        AuthResponseDTO response = buildAuthResponse(user, "dummy-jwt-token");
+        String token = jwtService.generateToken(user.getId(), user.getEmail(), user.getRole());
+        AuthResponseDTO response = buildAuthResponse(user, token);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // login
     @PostMapping("/login")
-    public AuthResponseDTO login(@RequestBody LoginRequestDTO request) {
+    public AuthResponseDTO login(@Valid @RequestBody LoginRequestDTO request) {
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
         if (userOpt.isEmpty()) {
-            throw new RuntimeException("Invalid email or password");
+            throw new ConflictException("Invalid email or password");
         }
 
         User user = userOpt.get();
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new RuntimeException("Invalid email or password");
+            throw new ConflictException("Invalid email or password");
         }
 
-        return buildAuthResponse(user, "dummy-jwt-token");
+        String token = jwtService.generateToken(user.getId(), user.getEmail(), user.getRole());
+        return buildAuthResponse(user, token);
     }
 
     private AuthResponseDTO buildAuthResponse(User user, String token) {
@@ -72,6 +81,8 @@ public class AuthController {
         dto.setId(user.getId());
         dto.setEmail(user.getEmail());
         dto.setFullName(user.getFullName());
+        dto.setRoleName(RoleMapper.toRoleName(user.getRole()));
+        dto.setRole(user.getRole());
         response.setUser(dto);
 
         return response;

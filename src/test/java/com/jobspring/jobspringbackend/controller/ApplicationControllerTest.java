@@ -1,6 +1,5 @@
-package com.jobspring.jobspringbackend;
+package com.jobspring.jobspringbackend.controller;
 
-import com.jobspring.jobspringbackend.controller.ApplicationController;
 import com.jobspring.jobspringbackend.dto.ApplicationDTO;
 import com.jobspring.jobspringbackend.service.ApplicationService;
 import org.junit.jupiter.api.Test;

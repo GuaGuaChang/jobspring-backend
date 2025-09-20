@@ -3,6 +3,8 @@ name: CI - Backend
 on:
   pull_request:
     branches: [ "main", "master" ]
+  push:
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -18,5 +20,9 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Build (skip tests for now)
-        run: mvn -B -DskipTests clean verify
+      - name: Lint (Checkstyle)
+        run: mvn -B checkstyle:check
+
+      - name: Unit tests with coverage
+        run: mvn -B clean verify
+

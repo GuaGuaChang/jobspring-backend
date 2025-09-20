@@ -77,8 +77,8 @@ public class ApplicationService {
             java.nio.file.Path target = root.resolve(filename).normalize();
             file.transferTo(target.toFile()); // 这里会抛 IOException
 
-            String urlPath = String.join("/", publicBase.replaceAll("/+$",""),
-                    safePrefix.replaceAll("^/+","").replaceAll("/+$",""), filename);
+            String urlPath = String.join("/", publicBase.replaceAll("/+$", ""),
+                    safePrefix.replaceAll("^/+", "").replaceAll("/+$", ""), filename);
             return urlPath.startsWith("/") ? urlPath : "/" + urlPath;
         } catch (java.io.IOException e) {
             throw new IllegalStateException("File upload failed", e); // 运行时异常

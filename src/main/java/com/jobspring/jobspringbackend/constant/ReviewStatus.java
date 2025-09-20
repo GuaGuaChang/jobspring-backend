@@ -5,7 +5,8 @@ public class ReviewStatus {
     public static final int PASS = 1;
     public static final int WITHDREW = 2;
 
-    private ReviewStatus(){}
+    private ReviewStatus() {
+    }
 
     public static String getStatusName(int status) {
         return switch (status) {
