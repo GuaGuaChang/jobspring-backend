@@ -17,4 +17,6 @@ public interface SkillRepository extends JpaRepository<Skill, Long> {
             "WHERE js.job.id = :jobId " +
             "ORDER BY js.weight DESC")
     List<String> findSkillNamesByJobId(@Param("jobId") Long jobId);
+
+    List<Skill> findAll();
 }
