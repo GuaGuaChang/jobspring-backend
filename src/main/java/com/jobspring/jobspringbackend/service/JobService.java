@@ -108,7 +108,7 @@ public class JobService {
         return r;
     }
 
-    /** HR/ADMIN：在指定公司下创建岗位（默认上架） */
+    // HR/ADMIN：在指定公司下创建岗位（默认上架）
     @Transactional
     public JobResponse createJob(Long companyId, JobCreateRequest req) {
         validateSalaryRange(req);
@@ -131,7 +131,7 @@ public class JobService {
         return toResponse(j);
     }
 
-    /** HR/ADMIN：编辑岗位（含上下线） */
+    // HR/ADMIN：编辑岗位（含上下线）
     @Transactional
     public JobResponse updateJob(Long companyId, Long jobId, JobUpdateRequest req) {
         Job j = jobRepository.findByIdAndCompany_Id(jobId, companyId)
@@ -152,7 +152,7 @@ public class JobService {
         return toResponse(j);
     }
 
-    /** HR/ADMIN：下线岗位（快捷端点） */
+    // HR/ADMIN：下线岗位（快捷端点）
     @Transactional
     public void deactivateJob(Long companyId, Long jobId) {
         Job j = jobRepository.findByIdAndCompany_Id(jobId, companyId)
@@ -160,7 +160,7 @@ public class JobService {
         j.setStatus(1);
     }
 
-    /** HR 查看本公司岗位（包含上下线） */
+    // HR 查看本公司岗位（包含上下线）
     public Page<JobResponse> listJobs(Long companyId, Integer status, Pageable pageable) {
         return jobRepository.findAll(pageable)
                 .map(this::toResponse)
