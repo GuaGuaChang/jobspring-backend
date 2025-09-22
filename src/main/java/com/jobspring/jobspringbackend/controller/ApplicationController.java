@@ -16,7 +16,6 @@ import java.net.URI;
 @RequestMapping("/api/applications")
 @RequiredArgsConstructor
 public class ApplicationController {
-    // TODO: Application related endpoints
 
     private ApplicationService applicationService;
 
