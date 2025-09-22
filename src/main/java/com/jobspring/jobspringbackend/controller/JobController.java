@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -47,12 +48,15 @@ public class JobController {
         return ResponseEntity.noContent().build();
     }
 
-    /** HR 后台列表（演示：分页；必要时补 status/company 过滤） */
-    @PreAuthorize("hasAnyRole('HR','ADMIN')")
-    @GetMapping("/companies/{companyId}/jobs")
-    public ResponseEntity<Page<JobResponse>> list(@PathVariable Long companyId,
-                                                  @RequestParam(required = false) Integer status,
-                                                  Pageable pageable) {
+
+    //HR 查看岗位
+    @PreAuthorize("hasRole('HR')")
+    @GetMapping("/companies/jobs")
+    public ResponseEntity<Page<JobResponse>> list(Pageable pageable,
+                                                  @RequestParam(required=false) Integer status,
+                                                  Authentication auth) {
+        Long userId = Long.valueOf(auth.getName());
+        Long companyId = jobService.findCompanyIdByUserId(userId);
         return ResponseEntity.ok(jobService.listJobs(companyId, status, pageable));
     }
 }

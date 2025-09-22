@@ -6,8 +6,10 @@ import com.jobspring.jobspringbackend.dto.JobResponse;
 import com.jobspring.jobspringbackend.dto.JobUpdateRequest;
 import com.jobspring.jobspringbackend.entity.Company;
 import com.jobspring.jobspringbackend.entity.Job;
+import com.jobspring.jobspringbackend.repository.CompanyMemberRepository;
 import com.jobspring.jobspringbackend.repository.JobRepository;
 import com.jobspring.jobspringbackend.repository.SkillRepository;
+import com.jobspring.jobspringbackend.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,9 @@ public class JobService {
 
     @Autowired
     private SkillRepository skillRepository;
+
+    @Autowired
+    private CompanyMemberRepository companyMemberRepository;
 
     // 为求职者获取职位列表
     public Page<JobDTO> getJobSeekerJobs(Pageable pageable) {
@@ -108,7 +113,7 @@ public class JobService {
         return r;
     }
 
-    // HR/ADMIN：在指定公司下创建岗位（默认上架）
+    // HR：在指定公司下创建岗位（默认上架）
     @Transactional
     public JobResponse createJob(Long companyId, JobCreateRequest req) {
         validateSalaryRange(req);
@@ -131,7 +136,7 @@ public class JobService {
         return toResponse(j);
     }
 
-    // HR/ADMIN：编辑岗位（含上下线）
+    // HR：编辑岗位（含上下线）
     @Transactional
     public JobResponse updateJob(Long companyId, Long jobId, JobUpdateRequest req) {
         Job j = jobRepository.findByIdAndCompanyId(jobId, companyId)
@@ -166,4 +171,12 @@ public class JobService {
                 .map(this::toResponse)
                 .map(r -> r);
     }
+
+    // 根据 userId 找到 HR 所属的公司
+    public Long findCompanyIdByUserId(Long userId) {
+        return companyMemberRepository.findFirstByUser_IdAndRole(userId, "HR")
+                .map(m -> m.getCompany().getId())
+                .orElseThrow(() -> new EntityNotFoundException("HR membership not found"));
+    }
+
 }
