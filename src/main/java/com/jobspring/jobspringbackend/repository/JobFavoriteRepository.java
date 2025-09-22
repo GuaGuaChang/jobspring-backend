@@ -10,6 +10,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface JobFavoriteRepository extends JpaRepository<JobFavorite, Long> {
     boolean existsByUserAndJob(User user, Job job);
     void deleteByUserAndJob(User user, Job job);
-    Page<JobFavorite> findByUser_Id(Long userId, Pageable pageable);
-    long countByJob_Id(Long jobId);
+    Page<JobFavorite> findByUserId(Long userId, Pageable pageable);
+    long countByJobId(Long jobId);
 }

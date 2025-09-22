@@ -56,7 +56,7 @@ public class JobFavoriteService {
     }
 
     public Page<FavoriteJobResponse> list(Long userId, Pageable pageable) {
-        return favoriteRepository.findByUser_Id(userId, pageable)
+        return favoriteRepository.findByUserId(userId, pageable)
                 .map(f -> {
                     FavoriteJobResponse r = new FavoriteJobResponse();
                     r.setJobId(f.getJob().getId());
@@ -71,6 +71,6 @@ public class JobFavoriteService {
     }
 
     public long countByJob(Long jobId) {
-        return favoriteRepository.countByJob_Id(jobId);
+        return favoriteRepository.countByJobId(jobId);
     }
 }

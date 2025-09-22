@@ -9,8 +9,10 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "job_favorites",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id","job_id"}))
+@Table(
+        name = "job_favorites",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id","job_id"})
+)
 public class JobFavorite {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

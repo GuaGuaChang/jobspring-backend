@@ -22,7 +22,7 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     Page<Job> searchJobs(@Param("keyword") String keyword, Pageable pageable);
 
     // 创建，修改，删除职位
-    boolean existsByIdAndCompany_Id(@Param("jobId") Long jobId, @Param("companyId") Long companyId);
-    Optional<Job> findByIdAndCompany_Id(Long jobId, Long companyId);
+    boolean existsByIdAndCompanyId(@Param("jobId") Long jobId, @Param("companyId") Long companyId);
+    Optional<Job> findByIdAndCompanyId(Long jobId, Long companyId);
 
 }

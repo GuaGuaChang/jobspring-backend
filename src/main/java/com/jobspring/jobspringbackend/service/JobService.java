@@ -134,7 +134,7 @@ public class JobService {
     // HR/ADMIN：编辑岗位（含上下线）
     @Transactional
     public JobResponse updateJob(Long companyId, Long jobId, JobUpdateRequest req) {
-        Job j = jobRepository.findByIdAndCompany_Id(jobId, companyId)
+        Job j = jobRepository.findByIdAndCompanyId(jobId, companyId)
                 .orElseThrow(() -> new EntityNotFoundException("Job not found"));
 
         validateSalaryRange(req);
@@ -155,7 +155,7 @@ public class JobService {
     // HR/ADMIN：下线岗位（快捷端点）
     @Transactional
     public void deactivateJob(Long companyId, Long jobId) {
-        Job j = jobRepository.findByIdAndCompany_Id(jobId, companyId)
+        Job j = jobRepository.findByIdAndCompanyId(jobId, companyId)
                 .orElseThrow(() -> new EntityNotFoundException("Job not found"));
         j.setStatus(1);
     }
