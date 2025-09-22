@@ -11,14 +11,14 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "job_favorites",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id","job_id"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "job_id"})
 )
 public class JobFavorite {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @ManyToOne(optional = false)
+
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
