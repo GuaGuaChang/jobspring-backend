@@ -1,8 +1,12 @@
 package com.jobspring.jobspringbackend.repository;
 
+import com.jobspring.jobspringbackend.entity.Review;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
-public interface ReviewRepository {
-    // TODO: Data access layer
+public interface ReviewRepository extends JpaRepository<Review, Long> {
+    List<Review> findAll();
 }

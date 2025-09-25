@@ -6,6 +6,7 @@ import com.jobspring.jobspringbackend.dto.JobResponse;
 import com.jobspring.jobspringbackend.dto.JobUpdateRequest;
 import com.jobspring.jobspringbackend.entity.Company;
 import com.jobspring.jobspringbackend.entity.Job;
+import com.jobspring.jobspringbackend.repository.CompanyRepository;
 import com.jobspring.jobspringbackend.repository.JobRepository;
 import com.jobspring.jobspringbackend.repository.SkillRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -27,6 +28,11 @@ public class JobService {
 
     @Autowired
     private SkillRepository skillRepository;
+
+
+    public List<Job> getAllJobs() {
+        return jobRepository.findAll();
+    }
 
     // 为求职者获取职位列表
     public Page<JobDTO> getJobSeekerJobs(Pageable pageable) {
