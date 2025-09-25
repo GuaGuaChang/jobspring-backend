@@ -3,11 +3,13 @@ package com.jobspring.jobspringbackend.controller;
 import com.jobspring.jobspringbackend.dto.LoginRequestDTO;
 import com.jobspring.jobspringbackend.dto.RegisterRequestDTO;
 import com.jobspring.jobspringbackend.dto.AuthResponseDTO;
+import com.jobspring.jobspringbackend.dto.SendCodeRequestDTO;
 import com.jobspring.jobspringbackend.entity.User;
 import com.jobspring.jobspringbackend.exception.ConflictException;
 import com.jobspring.jobspringbackend.repository.UserRepository;
 import com.jobspring.jobspringbackend.security.JwtService;
 import com.jobspring.jobspringbackend.security.RoleMapper;
+import com.jobspring.jobspringbackend.service.VerificationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,30 +32,32 @@ public class AuthController {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private VerificationService verificationService;
+
     // register
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
-        // simple check
-        if (request.getEmail() == null || request.getPassword() == null || request.getFullName() == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new ConflictException("Email already registered");
         }
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        try {
+            verificationService.verifyOrThrow(request.getEmail(), request.getCode());
+        } catch (RuntimeException ex) {
+            throw new ConflictException("Invalid email or verification code");
         }
 
         User user = new User();
         user.setEmail(request.getEmail());
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword())); // hash store
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setFullName(request.getFullName());
-        user.setRole(0); // default Candidate
+        user.setRole(0); // Candidate
         user.setIsActive(true);
-
         userRepository.save(user);
 
         String token = jwtService.generateToken(user.getId(), user.getEmail(), user.getRole());
-        AuthResponseDTO response = buildAuthResponse(user, token);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(buildAuthResponse(user, token));
     }
 
     // login
@@ -86,5 +90,15 @@ public class AuthController {
         response.setUser(dto);
 
         return response;
+    }
+
+    @PostMapping("/send-code")
+    public ResponseEntity<Void> sendCode(@Valid @RequestBody SendCodeRequestDTO req) {
+        try {
+            verificationService.sendRegisterCode(req.getEmail());
+        } catch (RuntimeException ignore) {
+            // To prevent email enumeration attacks, do not expose details; uniformly return 204
+        }
+        return ResponseEntity.noContent().build();
     }
 }
