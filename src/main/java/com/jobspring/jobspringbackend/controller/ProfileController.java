@@ -21,7 +21,7 @@ public class ProfileController {
     @Autowired
     private ProfileService profileService;
 
-    @Autowired  // ← 新增注入
+    @Autowired
     private UserRepository userRepository;
 
     @GetMapping
@@ -33,6 +33,7 @@ public class ProfileController {
         try {
             String userIdStr = authentication.getName();
             Long userId = Long.parseLong(userIdStr);
+
             return profileService.getCompleteProfile(userId);
         } catch (NumberFormatException e) {
             throw new RuntimeException("Invalid user ID format in token");
