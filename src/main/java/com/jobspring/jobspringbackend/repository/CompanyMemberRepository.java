@@ -12,6 +12,6 @@ public interface CompanyMemberRepository extends JpaRepository<CompanyMember, Lo
     Optional<CompanyMember> findFirstByUserIdAndRole(Long userId, String role);
 
     // 校验：该用户是否是这家公司的 HR（如需要额外鉴权可用）
-    boolean existsByUser_IdAndCompanyIdAndRole(Long userId, Long companyId, String role);
+    boolean existsByUserIdAndCompanyIdAndRole(Long userId, Long companyId, String role);
 
 }
