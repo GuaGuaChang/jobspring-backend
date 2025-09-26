@@ -11,7 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/favorites")
+@RequestMapping("/api/job_favorites")
 @RequiredArgsConstructor
 public class JobFavoriteController {
 

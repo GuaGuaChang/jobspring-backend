@@ -17,7 +17,7 @@ import java.net.URI;
 @RequiredArgsConstructor
 public class ApplicationController {
 
-    private ApplicationService applicationService;
+    private final ApplicationService applicationService;
 
 
     @PostMapping(value = "/{jobId}/applications", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

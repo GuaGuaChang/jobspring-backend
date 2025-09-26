@@ -31,4 +31,7 @@ public class User {
 
     @Column(nullable = false)
     private Boolean isActive = true;
+
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, optional = true)
+    private Profile profile;
 }

@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -20,7 +21,7 @@ import java.net.URI;
 public class JobController {
     private final JobService jobService;
 
-    /** 新建岗位（默认上架） */
+    // 新建岗位（默认上架）
     @PreAuthorize("hasAnyRole('HR')")
     @PostMapping("/companies/{companyId}/jobs")
     public ResponseEntity<JobResponse> create(@PathVariable Long companyId,
@@ -29,16 +30,17 @@ public class JobController {
         return ResponseEntity.created(URI.create("/api/hr/jobs/" + res.getId())).body(res);
     }
 
-    /** 编辑岗位（含上下线） */
+    // 编辑岗位（逻辑变成：复制新建 + 老的下线）
     @PreAuthorize("hasAnyRole('HR')")
     @PatchMapping("/companies/{companyId}/jobs/{jobId}")
     public ResponseEntity<JobResponse> update(@PathVariable Long companyId,
                                               @PathVariable Long jobId,
                                               @Valid @RequestBody JobUpdateRequest req) {
-        return ResponseEntity.ok(jobService.updateJob(companyId, jobId, req));
+        JobResponse res = jobService.replaceJob(companyId, jobId, req);
+        return ResponseEntity.ok(res);
     }
 
-    /** 下线岗位（快捷端点，可选） */
+    // 下线岗位（快捷端点，可选）
     @PreAuthorize("hasAnyRole('HR','ADMIN')")
     @PostMapping("/companies/{companyId}/jobs/{jobId}/deactivate")
     public ResponseEntity<Void> deactivate(@PathVariable Long companyId,
@@ -47,12 +49,15 @@ public class JobController {
         return ResponseEntity.noContent().build();
     }
 
-    /** HR 后台列表（演示：分页；必要时补 status/company 过滤） */
-    @PreAuthorize("hasAnyRole('HR','ADMIN')")
-    @GetMapping("/companies/{companyId}/jobs")
-    public ResponseEntity<Page<JobResponse>> list(@PathVariable Long companyId,
+
+    // HR 查看岗位
+    @PreAuthorize("hasRole('HR')")
+    @GetMapping("/companies/jobs")
+    public ResponseEntity<Page<JobResponse>> list(Pageable pageable,
                                                   @RequestParam(required = false) Integer status,
-                                                  Pageable pageable) {
+                                                  Authentication auth) {
+        Long userId = Long.valueOf(auth.getName());
+        Long companyId = jobService.findCompanyIdByUserId(userId);
         return ResponseEntity.ok(jobService.listJobs(companyId, status, pageable));
     }
 }
