@@ -33,6 +33,10 @@ public class JobService {
     @Autowired
     private CompanyMemberRepository companyMemberRepository;
 
+    public List<Job> getAllJobs() {
+        return jobRepository.findAll();
+    }
+
     // 为求职者获取职位列表
     public Page<JobDTO> getJobSeekerJobs(Pageable pageable) {
         Page<Job> jobs = jobRepository.findByStatus(0, pageable);
