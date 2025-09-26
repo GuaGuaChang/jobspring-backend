@@ -136,25 +136,32 @@ public class JobService {
         return toResponse(j);
     }
 
-    // HR：编辑岗位（含上下线）
+    // 编辑岗位（逻辑变成：复制新建 + 老的下线）
     @Transactional
-    public JobResponse updateJob(Long companyId, Long jobId, JobUpdateRequest req) {
-        Job j = jobRepository.findByIdAndCompanyId(jobId, companyId)
+    public JobResponse replaceJob(Long companyId, Long jobId, JobUpdateRequest req) {
+        // 找到旧岗位
+        Job oldJob = jobRepository.findByIdAndCompanyId(jobId, companyId)
                 .orElseThrow(() -> new EntityNotFoundException("Job not found"));
 
-        validateSalaryRange(req);
+        // 将旧岗位下线
+        oldJob.setStatus(1); // 1 = 下线
+        jobRepository.save(oldJob);
 
-        if (req.getTitle() != null) j.setTitle(req.getTitle());
-        if (req.getLocation() != null) j.setLocation(req.getLocation());
-        if (req.getEmploymentType() != null) j.setEmploymentType(req.getEmploymentType());
-        if (req.getSalaryMin() != null) j.setSalaryMin(req.getSalaryMin());
-        if (req.getSalaryMax() != null) j.setSalaryMax(req.getSalaryMax());
-        if (req.getDescription() != null) j.setDescription(req.getDescription());
-        if (req.getStatus() != null && !Objects.equals(j.getStatus(), req.getStatus())) {
-            j.setStatus(req.getStatus()); // 0 上架 / 1 下线
-        }
+        // 新建岗位（复制旧岗位的基础信息 + 更新请求内容）
+        Job newJob = new Job();
+        newJob.setCompany(oldJob.getCompany());
+        newJob.setTitle(req.getTitle() != null ? req.getTitle() : oldJob.getTitle());
+        newJob.setLocation(req.getLocation() != null ? req.getLocation() : oldJob.getLocation());
+        newJob.setEmploymentType(req.getEmploymentType() != null ? req.getEmploymentType() : oldJob.getEmploymentType());
+        newJob.setSalaryMin(req.getSalaryMin() != null ? req.getSalaryMin() : oldJob.getSalaryMin());
+        newJob.setSalaryMax(req.getSalaryMax() != null ? req.getSalaryMax() : oldJob.getSalaryMax());
+        newJob.setDescription(req.getDescription() != null ? req.getDescription() : oldJob.getDescription());
+        newJob.setStatus(0); // 默认新建为上架
+        newJob.setPostedAt(LocalDateTime.now());
 
-        return toResponse(j);
+        jobRepository.save(newJob);
+
+        return toResponse(newJob);
     }
 
     // HR/ADMIN：下线岗位（快捷端点）

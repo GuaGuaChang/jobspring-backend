@@ -26,7 +26,6 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class ApplicationService {
-    // TODO: Business logic
 
     private final JobRepository jobRepo;
     private final UserRepository userRepo;
@@ -55,11 +54,16 @@ public class ApplicationService {
         app.setAppliedAt(LocalDateTime.now());
         app.setResumeProfile(form.getResumeProfile());
 
-        if (file != null && !file.isEmpty()) {
+        // 优先：用户 Profile 的简历 URL
+        String resumeUrl = null;
+        if (user.getProfile() != null && user.getProfile().getFileUrl() != null) {
+            resumeUrl = user.getProfile().getFileUrl();
+        } else if (file != null && !file.isEmpty()) {
+            // 次选：表单上传的文件
             validateFile(file);
-            String url = saveToLocal(file, "applications/" + jobId + "/" + userId);
-            app.setResumeUrl(url);
+            resumeUrl = saveToLocal(file, "applications/" + jobId + "/" + userId);
         }
+        app.setResumeUrl(resumeUrl);
 
         appRepo.save(app);
         return app.getId();
