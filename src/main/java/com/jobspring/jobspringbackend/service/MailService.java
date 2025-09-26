@@ -11,7 +11,7 @@ public class MailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${app.mail.from}")
+    @Value("${app.mail.from:1649182810@qq.com}")
     private String from;
 
     public MailService(JavaMailSender mailSender) {
