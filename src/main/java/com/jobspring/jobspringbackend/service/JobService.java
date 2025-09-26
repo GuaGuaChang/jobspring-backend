@@ -181,7 +181,7 @@ public class JobService {
 
     // 根据 userId 找到 HR 所属的公司
     public Long findCompanyIdByUserId(Long userId) {
-        return companyMemberRepository.findFirstByUser_IdAndRole(userId, "HR")
+        return companyMemberRepository.findFirstByUserIdAndRole(userId, "HR")
                 .map(m -> m.getCompany().getId())
                 .orElseThrow(() -> new EntityNotFoundException("HR membership not found"));
     }
