@@ -41,8 +41,8 @@ public class JobController {
     }
 
     // 下线岗位（快捷端点，可选）
-    @PreAuthorize("hasAnyRole('HR','ADMIN')")
-    @PostMapping("/companies/{companyId}/jobs/{jobId}/deactivate")
+    @PreAuthorize("hasAnyRole('HR')")
+    @PostMapping("/companies/{companyId}/jobs/{jobId}/invalid")
     public ResponseEntity<Void> deactivate(@PathVariable Long companyId,
                                            @PathVariable Long jobId) {
         jobService.deactivateJob(companyId, jobId);
@@ -50,7 +50,7 @@ public class JobController {
     }
 
 
-    // HR 查看岗位
+    // 查看岗位
     @PreAuthorize("hasRole('HR')")
     @GetMapping("/companies/jobs")
     public ResponseEntity<Page<JobResponse>> list(Pageable pageable,

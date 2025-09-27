@@ -6,10 +6,7 @@ import com.jobspring.jobspringbackend.dto.JobResponse;
 import com.jobspring.jobspringbackend.dto.JobUpdateRequest;
 import com.jobspring.jobspringbackend.entity.Company;
 import com.jobspring.jobspringbackend.entity.Job;
-import com.jobspring.jobspringbackend.repository.CompanyMemberRepository;
-import com.jobspring.jobspringbackend.repository.JobRepository;
-import com.jobspring.jobspringbackend.repository.SkillRepository;
-import com.jobspring.jobspringbackend.repository.UserRepository;
+import com.jobspring.jobspringbackend.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +29,9 @@ public class JobService {
 
     @Autowired
     private CompanyMemberRepository companyMemberRepository;
+
+    @Autowired
+    private ApplicationRepository applicationRepository;
 
     public List<Job> getAllJobs() {
         return jobRepository.findAll();
@@ -167,13 +167,19 @@ public class JobService {
 
         return toResponse(newJob);
     }
+    
 
-    // HR/ADMIN：下线岗位（快捷端点）
     @Transactional
     public void deactivateJob(Long companyId, Long jobId) {
-        Job j = jobRepository.findByIdAndCompanyId(jobId, companyId)
+        Job job = jobRepository.findByIdAndCompanyId(jobId, companyId)
                 .orElseThrow(() -> new EntityNotFoundException("Job not found"));
-        j.setStatus(1);
+
+        // 1. 下线岗位
+        job.setStatus(1);
+        jobRepository.save(job);
+
+        // 2. 同步更新所有相关申请状态为 7（无效）
+        applicationRepository.updateStatusByJobId(jobId, 7);
     }
 
     // HR 查看本公司岗位（包含上下线）

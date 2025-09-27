@@ -1,10 +1,12 @@
 package com.jobspring.jobspringbackend.controller;
 
+import com.jobspring.jobspringbackend.dto.ApplicationBriefResponse;
 import com.jobspring.jobspringbackend.dto.JobDTO;
 import com.jobspring.jobspringbackend.dto.ReviewDTO;
 import com.jobspring.jobspringbackend.entity.Job;
 import com.jobspring.jobspringbackend.entity.Review;
 import com.jobspring.jobspringbackend.service.AdminService;
+import com.jobspring.jobspringbackend.service.HrApplicationService;
 import com.jobspring.jobspringbackend.service.JobService;
 import com.jobspring.jobspringbackend.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -34,6 +37,9 @@ public class AdminController {
     @Autowired
     private ReviewService reviewService;
 
+    @Autowired
+    private HrApplicationService hrApplicationService;
+
     @GetMapping("/status")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<List<Map<String, Object>>> getAllJobStatus() {
@@ -44,6 +50,7 @@ public class AdminController {
                     jobInfo.put("id", job.getId());
                     jobInfo.put("title", job.getTitle());
                     jobInfo.put("company", job.getCompany().getName());
+                    jobInfo.put("companyId",job.getCompany().getId());
                     jobInfo.put("status", job.getStatus());
                     return jobInfo;
                 })
@@ -83,5 +90,30 @@ public class AdminController {
                 })
                 .collect(Collectors.toList());
         return new ResponseEntity<>(reviewDTOs, HttpStatus.OK);
+    }
+
+    // 指定公司查看（会做归属校验）
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/companies/{companyId}/applications")
+    public ResponseEntity<Page<ApplicationBriefResponse>> listByCompany(
+            @PathVariable Long companyId,
+            @RequestParam(required = false) Long jobId,
+            @RequestParam(required = false) Integer status,
+            Pageable pageable,
+            Authentication auth
+    ) {
+        Long hrUserId = Long.parseLong(auth.getName());
+        Page<ApplicationBriefResponse> page = hrApplicationService
+                .listCompanyApplications(hrUserId, companyId, jobId, status, pageable);
+        return ResponseEntity.ok(page);
+    }
+
+    // 下线岗位（快捷端点，可选）
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/companies/{companyId}/jobs/{jobId}/invalid")
+    public ResponseEntity<Void> deactivate(@PathVariable Long companyId,
+                                           @PathVariable Long jobId) {
+        jobService.deactivateJob(companyId, jobId);
+        return ResponseEntity.noContent().build();
     }
 }
