@@ -1,5 +1,6 @@
 package com.jobspring.jobspringbackend.security;
 
+import com.jobspring.jobspringbackend.exception.ErrorCode;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -7,7 +8,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -29,6 +32,18 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // 401 Unauthenticated
+    @Bean
+    public AuthenticationEntryPoint restEntryPoint() {
+        return (req, resp, ex) -> JsonAuthHandlers.write(req, resp, ErrorCode.UNAUTHORIZED, "Unauthorized");
+    }
+
+    // 403 No permission
+    @Bean
+    public AccessDeniedHandler restAccessDeniedHandler() {
+        return (req, resp, ex) -> JsonAuthHandlers.write(req, resp, ErrorCode.FORBIDDEN, "Forbidden");
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -42,6 +57,9 @@ public class SecurityConfig {
                                 "/api/job_seeker/job_list",
                                 "/api/job_seeker/job_list/search").permitAll()
                         .anyRequest().authenticated()
+                ).exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(restEntryPoint())
+                        .accessDeniedHandler(restAccessDeniedHandler())
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
 
