@@ -23,7 +23,7 @@ public class JobController {
 
     // 新建岗位（默认上架）
     @PreAuthorize("hasAnyRole('HR')")
-    @PostMapping("/companies/{companyId}/jobs")
+    @PostMapping("/companies/{companyId}/jobs/{jobId}/invalid")
     public ResponseEntity<JobResponse> create(@PathVariable Long companyId,
                                               @Valid @RequestBody JobCreateRequest req) {
         JobResponse res = jobService.createJob(companyId, req);
@@ -50,7 +50,7 @@ public class JobController {
     }
 
 
-    // HR 查看岗位
+    // 查看岗位
     @PreAuthorize("hasRole('HR')")
     @GetMapping("/companies/jobs")
     public ResponseEntity<Page<JobResponse>> list(Pageable pageable,
