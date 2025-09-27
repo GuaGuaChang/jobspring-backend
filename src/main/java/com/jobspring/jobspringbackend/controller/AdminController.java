@@ -50,7 +50,7 @@ public class AdminController {
                     jobInfo.put("id", job.getId());
                     jobInfo.put("title", job.getTitle());
                     jobInfo.put("company", job.getCompany().getName());
-                    jobInfo.put("companyId",job.getCompany().getId());
+                    jobInfo.put("companyId", job.getCompany().getId());
                     jobInfo.put("status", job.getStatus());
                     return jobInfo;
                 })
