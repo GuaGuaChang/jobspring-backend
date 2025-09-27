@@ -1,6 +1,8 @@
 package com.jobspring.jobspringbackend.service;
 
 import com.jobspring.jobspringbackend.entity.EmailVerificationCode;
+import com.jobspring.jobspringbackend.exception.BizException;
+import com.jobspring.jobspringbackend.exception.ErrorCode;
 import com.jobspring.jobspringbackend.repository.EmailVerificationCodeRepository;
 import com.jobspring.jobspringbackend.util.CodeGenerator;
 import com.jobspring.jobspringbackend.util.HashUtils;
@@ -43,7 +45,7 @@ public class VerificationService {
         long sentToday = repo.countByEmailAndPurposeAndSentAtAfter(
                 email, PURPOSE_REGISTER, now.toLocalDate().atStartOfDay());
         if (sentToday >= dailyLimit) {
-            throw new RuntimeException("Too many requests. Try again tomorrow.");
+            throw new BizException(ErrorCode.TOO_MANY_REQUESTS, "Too many requests. Try again tomorrow.");
         }
 
         Optional<EmailVerificationCode> recentActive = repo
@@ -52,7 +54,7 @@ public class VerificationService {
 
         if (recentActive.isPresent() &&
                 recentActive.get().getSentAt().plusSeconds(cooldownSeconds).isAfter(now)) {
-            throw new RuntimeException("Please wait before requesting another code.");
+            throw new BizException(ErrorCode.TOO_MANY_REQUESTS, "Please wait before requesting another code.");
         }
 
         String code = CodeGenerator.numeric6();
@@ -82,19 +84,19 @@ public class VerificationService {
         EmailVerificationCode evc = repo
                 .findFirstByEmailAndPurposeAndStatusAndExpiresAtAfterOrderBySentAtDesc(
                         email, PURPOSE_REGISTER, 0, now)
-                .orElseThrow(() -> new RuntimeException("Invalid or expired verification code."));
+                .orElseThrow(() -> new BizException(ErrorCode.INVALID_ARGUMENT, "Invalid or expired verification code."));
 
         if (evc.getAttemptCount() >= maxAttempts) {
             evc.setStatus(3); // BLOCKED
             repo.save(evc);
-            throw new RuntimeException("Too many attempts. Please request a new code.");
+            throw new BizException(ErrorCode.TOO_MANY_REQUESTS, "Too many attempts. Please request a new code.");
         }
 
         evc.setAttemptCount(evc.getAttemptCount() + 1);
 
         if (!HashUtils.matches(code, evc.getCodeHash())) {
             repo.save(evc);
-            throw new RuntimeException("Invalid or expired verification code.");
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "Invalid or expired verification code.");
         }
 
         evc.setStatus(1); // USED

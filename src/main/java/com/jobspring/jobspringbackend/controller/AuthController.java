@@ -42,13 +42,7 @@ public class AuthController {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new BizException(ErrorCode.CONFLICT, "Email already registered");
         }
-
-        try {
-            verificationService.verifyOrThrow(request.getEmail(), request.getCode());
-        } catch (RuntimeException ex) {
-            throw new BizException(ErrorCode.CONFLICT, "Invalid email or verification code");
-        }
-
+        verificationService.verifyOrThrow(request.getEmail(), request.getCode());
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
@@ -95,11 +89,7 @@ public class AuthController {
 
     @PostMapping("/send-code")
     public ResponseEntity<Void> sendCode(@Valid @RequestBody SendCodeRequestDTO req) {
-        try {
-            verificationService.sendRegisterCode(req.getEmail());
-        } catch (RuntimeException ignore) {
-            // To prevent email enumeration attacks, do not expose details; uniformly return 204
-        }
+        verificationService.sendRegisterCode(req.getEmail());
         return ResponseEntity.noContent().build();
     }
 }
