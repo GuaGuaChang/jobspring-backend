@@ -23,7 +23,7 @@ public class JobController {
 
     // 新建岗位（默认上架）
     @PreAuthorize("hasAnyRole('HR')")
-    @PostMapping("/companies/{companyId}/jobs/{jobId}/invalid")
+    @PostMapping("/companies/{companyId}/jobs")
     public ResponseEntity<JobResponse> create(@PathVariable Long companyId,
                                               @Valid @RequestBody JobCreateRequest req) {
         JobResponse res = jobService.createJob(companyId, req);
@@ -41,8 +41,8 @@ public class JobController {
     }
 
     // 下线岗位（快捷端点，可选）
-    @PreAuthorize("hasAnyRole('HR','ADMIN')")
-    @PostMapping("/companies/{companyId}/jobs/{jobId}/deactivate")
+    @PreAuthorize("hasAnyRole('HR')")
+    @PostMapping("/companies/{companyId}/jobs/{jobId}/invalid")
     public ResponseEntity<Void> deactivate(@PathVariable Long companyId,
                                            @PathVariable Long jobId) {
         jobService.deactivateJob(companyId, jobId);
