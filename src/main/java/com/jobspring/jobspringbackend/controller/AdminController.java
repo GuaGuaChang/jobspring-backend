@@ -43,8 +43,28 @@ public class AdminController {
     @Autowired
     private HrApplicationService hrApplicationService;
 
+    @GetMapping("/check_review_debug")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> checkReviewDebug() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No authentication found");
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("User principal: ").append(auth.getPrincipal()).append("\n");
+        sb.append("Authorities: ");
+        auth.getAuthorities().forEach(a -> sb.append(a.getAuthority()).append(" "));
+        sb.append("\n");
+        sb.append("Is authenticated: ").append(auth.isAuthenticated()).append("\n");
+
+        return ResponseEntity.ok(sb.toString());
+    }
+
+
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/status")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<List<Map<String, Object>>> getAllJobStatus() {
         List<Job> jobs = jobService.getAllJobs();
         List<Map<String, Object>> response = jobs.stream()
@@ -61,8 +81,8 @@ public class AdminController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public Page<JobDTO> searchJobs(
             @RequestParam String keyword,
             @RequestParam(defaultValue = "0") int page,
@@ -72,8 +92,8 @@ public class AdminController {
         return adminService.searchJobs(keyword, pageable);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/check_review")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<List<ReviewDTO>> checkReview() {
         List<Review> reviews = reviewService.getAllReviews();
         List<ReviewDTO> reviewDTOs = reviews.stream()
@@ -94,7 +114,6 @@ public class AdminController {
                 .collect(Collectors.toList());
         return new ResponseEntity<>(reviewDTOs, HttpStatus.OK);
     }
-
 
 
     // 指定公司查看（会做归属校验）
@@ -122,7 +141,7 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/review/pass/{id}")
     public ResponseEntity<ReviewDTO> passReview(@PathVariable Long id,
                                                 @RequestBody NoteDTO request) {
@@ -133,7 +152,7 @@ public class AdminController {
         return ResponseEntity.ok(review);
     }
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/review/reject/{id}")
     public ResponseEntity<ReviewDTO> rejectReview(@PathVariable Long id,
                                                   @RequestBody NoteDTO request) {
