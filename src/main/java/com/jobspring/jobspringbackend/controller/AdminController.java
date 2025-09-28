@@ -2,6 +2,7 @@ package com.jobspring.jobspringbackend.controller;
 
 import com.jobspring.jobspringbackend.dto.ApplicationBriefResponse;
 import com.jobspring.jobspringbackend.dto.JobDTO;
+import com.jobspring.jobspringbackend.dto.NoteDTO;
 import com.jobspring.jobspringbackend.dto.ReviewDTO;
 import com.jobspring.jobspringbackend.entity.Job;
 import com.jobspring.jobspringbackend.entity.Review;
@@ -18,6 +19,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -92,6 +95,8 @@ public class AdminController {
         return new ResponseEntity<>(reviewDTOs, HttpStatus.OK);
     }
 
+
+
     // 指定公司查看（会做归属校验）
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/companies/{companyId}/applications")
@@ -115,5 +120,27 @@ public class AdminController {
                                            @PathVariable Long jobId) {
         jobService.deactivateJob(companyId, jobId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PostMapping("/review/pass/{id}")
+    public ResponseEntity<ReviewDTO> passReview(@PathVariable Long id,
+                                                @RequestBody NoteDTO request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = Long.parseLong(authentication.getName());
+
+        ReviewDTO review = reviewService.approveReview(id, userId, request.getNote());
+        return ResponseEntity.ok(review);
+    }
+
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PostMapping("/review/reject/{id}")
+    public ResponseEntity<ReviewDTO> rejectReview(@PathVariable Long id,
+                                                  @RequestBody NoteDTO request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = Long.parseLong(authentication.getName());
+
+        ReviewDTO review = reviewService.rejectReview(id, userId, request.getNote());
+        return ResponseEntity.ok(review);
     }
 }
