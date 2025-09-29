@@ -43,25 +43,6 @@ public class AdminController {
     @Autowired
     private HrApplicationService hrApplicationService;
 
-    @GetMapping("/check_review_debug")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> checkReviewDebug() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
-        if (auth == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No authentication found");
-        }
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("User principal: ").append(auth.getPrincipal()).append("\n");
-        sb.append("Authorities: ");
-        auth.getAuthorities().forEach(a -> sb.append(a.getAuthority()).append(" "));
-        sb.append("\n");
-        sb.append("Is authenticated: ").append(auth.isAuthenticated()).append("\n");
-
-        return ResponseEntity.ok(sb.toString());
-    }
-
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/status")
@@ -95,24 +76,11 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/check_review")
     public ResponseEntity<List<ReviewDTO>> checkReview() {
-        List<Review> reviews = reviewService.getAllReviews();
-        List<ReviewDTO> reviewDTOs = reviews.stream()
-                .map(review -> {
-                    ReviewDTO reviewDTO = new ReviewDTO();
-                    reviewDTO.setId(review.getId());
-                    reviewDTO.setApplicationId(review.getApplication().getId());
-                    reviewDTO.setTitle(review.getTitle());
-                    reviewDTO.setContent(review.getContent());
-                    reviewDTO.setRating(review.getRating());
-                    reviewDTO.setStatus(review.getStatus());
-                    reviewDTO.setSubmittedAt(review.getSubmittedAt());
-                    reviewDTO.setReviewedById(review.getReviewedBy() != null ? review.getReviewedBy().getId() : null);
-                    reviewDTO.setReviewNote(review.getReviewNote());
-                    reviewDTO.setPublicAt(review.getPublicAt());
-                    return reviewDTO;
-                })
+        List<ReviewDTO> reviewDTOs = reviewService.getAllReviews()
+                .stream()
+                .map(reviewService::toDto)
                 .collect(Collectors.toList());
-        return new ResponseEntity<>(reviewDTOs, HttpStatus.OK);
+        return ResponseEntity.ok(reviewDTOs);
     }
 
 
