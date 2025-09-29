@@ -16,4 +16,5 @@ public class ReviewDTO {
     private Long reviewedById;
     private String reviewNote;
     private LocalDateTime publicAt;
+    private String imageUrl;
 }

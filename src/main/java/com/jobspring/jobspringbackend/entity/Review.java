@@ -43,4 +43,7 @@ public class Review {
 
     @Column(name = "public_at")
     private LocalDateTime publicAt;
+
+    @Column(name = "image_url")
+    private String imageUrl;
 }

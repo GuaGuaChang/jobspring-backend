@@ -102,7 +102,7 @@ public class ReviewService {
         return toDto(saved);
     }
 
-    private ReviewDTO toDto(Review review) {
+    public ReviewDTO toDto(Review review) {
         ReviewDTO dto = new ReviewDTO();
         dto.setId(review.getId());
         dto.setApplicationId(review.getApplication().getId());
@@ -114,6 +114,7 @@ public class ReviewService {
         dto.setReviewedById(review.getReviewedBy() != null ? review.getReviewedBy().getId() : null);
         dto.setReviewNote(review.getReviewNote());
         dto.setPublicAt(review.getPublicAt());
+        dto.setImageUrl(review.getImageUrl());
         return dto;
     }
 }
