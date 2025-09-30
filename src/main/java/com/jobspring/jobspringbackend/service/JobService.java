@@ -167,7 +167,7 @@ public class JobService {
 
         return toResponse(newJob);
     }
-    
+
 
     @Transactional
     public void deactivateJob(Long companyId, Long jobId) {

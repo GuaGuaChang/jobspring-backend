@@ -1,5 +1,6 @@
 package com.jobspring.jobspringbackend.security;
 
+import com.jobspring.jobspringbackend.exception.ErrorCode;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -9,7 +10,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -19,7 +22,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     private final JwtService jwtService;
@@ -31,6 +34,18 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    // 401 Unauthenticated
+    @Bean
+    public AuthenticationEntryPoint restEntryPoint() {
+        return (req, resp, ex) -> JsonAuthHandlers.write(req, resp, ErrorCode.UNAUTHORIZED, "Unauthorized");
+    }
+
+    // 403 No permission
+    @Bean
+    public AccessDeniedHandler restAccessDeniedHandler() {
+        return (req, resp, ex) -> JsonAuthHandlers.write(req, resp, ErrorCode.FORBIDDEN, "Forbidden");
     }
 
     @Bean
@@ -46,6 +61,9 @@ public class SecurityConfig {
                                 "/api/job_seeker/job_list",
                                 "/api/job_seeker/job_list/search").permitAll()
                         .anyRequest().authenticated()
+                ).exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(restEntryPoint())
+                        .accessDeniedHandler(restAccessDeniedHandler())
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
 

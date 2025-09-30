@@ -1,11 +1,12 @@
 package com.jobspring.jobspringbackend.controller;
 
+import com.jobspring.jobspringbackend.exception.BizException;
+import com.jobspring.jobspringbackend.exception.ErrorCode;
 import com.jobspring.jobspringbackend.dto.LoginRequestDTO;
 import com.jobspring.jobspringbackend.dto.RegisterRequestDTO;
 import com.jobspring.jobspringbackend.dto.AuthResponseDTO;
 import com.jobspring.jobspringbackend.dto.SendCodeRequestDTO;
 import com.jobspring.jobspringbackend.entity.User;
-import com.jobspring.jobspringbackend.exception.ConflictException;
 import com.jobspring.jobspringbackend.repository.UserRepository;
 import com.jobspring.jobspringbackend.security.JwtService;
 import com.jobspring.jobspringbackend.security.RoleMapper;
@@ -39,15 +40,9 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new ConflictException("Email already registered");
+            throw new BizException(ErrorCode.CONFLICT, "Email already registered");
         }
-
-        try {
-            verificationService.verifyOrThrow(request.getEmail(), request.getCode());
-        } catch (RuntimeException ex) {
-            throw new ConflictException("Invalid email or verification code");
-        }
-
+        verificationService.verifyOrThrow(request.getEmail(), request.getCode());
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
@@ -65,12 +60,12 @@ public class AuthController {
     public AuthResponseDTO login(@Valid @RequestBody LoginRequestDTO request) {
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
         if (userOpt.isEmpty()) {
-            throw new ConflictException("Invalid email or password");
+            throw new BizException(ErrorCode.CONFLICT, "Invalid email or password");
         }
 
         User user = userOpt.get();
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new ConflictException("Invalid email or password");
+            throw new BizException(ErrorCode.CONFLICT, "Invalid email or password");
         }
 
         String token = jwtService.generateToken(user.getId(), user.getEmail(), user.getRole());
@@ -94,11 +89,7 @@ public class AuthController {
 
     @PostMapping("/send-code")
     public ResponseEntity<Void> sendCode(@Valid @RequestBody SendCodeRequestDTO req) {
-        try {
-            verificationService.sendRegisterCode(req.getEmail());
-        } catch (RuntimeException ignore) {
-            // To prevent email enumeration attacks, do not expose details; uniformly return 204
-        }
+        verificationService.sendRegisterCode(req.getEmail());
         return ResponseEntity.noContent().build();
     }
 }
