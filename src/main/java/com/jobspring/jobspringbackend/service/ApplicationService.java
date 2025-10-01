@@ -23,6 +23,10 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+// ApplicationService
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ApplicationService {
@@ -63,6 +67,7 @@ public class ApplicationService {
             validateFile(file);
             resumeUrl = saveToLocal(file, "applications/" + jobId + "/" + userId);
         }
+
         app.setResumeUrl(resumeUrl);
 
         appRepo.save(app);
@@ -79,7 +84,8 @@ public class ApplicationService {
             java.nio.file.Path root = java.nio.file.Paths.get(uploadDir, safePrefix).normalize();
             java.nio.file.Files.createDirectories(root);
             java.nio.file.Path target = root.resolve(filename).normalize();
-            file.transferTo(target.toFile()); // 这里会抛 IOException
+
+            file.transferTo(target);
 
             String urlPath = String.join("/", publicBase.replaceAll("/+$", ""),
                     safePrefix.replaceAll("^/+", "").replaceAll("/+$", ""), filename);
