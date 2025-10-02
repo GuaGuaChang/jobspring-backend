@@ -29,7 +29,7 @@ public class Application {
     private Profile profile;
 
     @Column(nullable = false)
-    private Integer status = 0; // 0 = 已投递，1 = 筛选中，2 = 约面，3 = 面试中，4 = 通过，5 = 拒绝，6 = 撤回, 7 = 失效
+    private Integer status = 0; // 0 = 已投递，1 = 筛选中，2 = 通过，3 = 拒绝， 4 = 失效
 
     private LocalDateTime appliedAt;
 

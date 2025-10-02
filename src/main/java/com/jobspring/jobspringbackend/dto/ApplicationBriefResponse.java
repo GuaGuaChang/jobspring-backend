@@ -14,4 +14,6 @@ public class ApplicationBriefResponse {
     private Integer status;
     private LocalDateTime appliedAt;
     private String resumeUrl;
+    private Long companyId;
+    private String companyName;
 }
