@@ -1,12 +1,10 @@
 package com.jobspring.jobspringbackend.controller;
 
-import com.jobspring.jobspringbackend.dto.CompanyDTO;
-import com.jobspring.jobspringbackend.dto.JobDTO;
-import com.jobspring.jobspringbackend.dto.JobSeekerReviewDTO;
-import com.jobspring.jobspringbackend.dto.ReviewDTO;
+import com.jobspring.jobspringbackend.dto.*;
 import com.jobspring.jobspringbackend.repository.UserRepository;
 import com.jobspring.jobspringbackend.service.CompanyService;
 import com.jobspring.jobspringbackend.service.JobService;
+import com.jobspring.jobspringbackend.service.JobseekerApplicationService;
 import com.jobspring.jobspringbackend.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -15,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -38,6 +37,9 @@ public class JobSeekerController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private JobseekerApplicationService jobseekerApplicationService;
 
     // 获取求职者职位列表
     @GetMapping("/job_list")
@@ -80,5 +82,20 @@ public class JobSeekerController {
         ReviewDTO review = reviewService.createReview(reviewDTO, userId);
 
         return new ResponseEntity<>(review, HttpStatus.CREATED);
+    }
+
+    //Jobseeker 获取自己提交的申请（分页）
+    //GET /api/me/applications?status=0&page=0&size=10&sort=appliedAt,desc
+    @GetMapping("/applications")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<Page<ApplicationBriefResponse>> jobseekerApplications(
+            @RequestParam(required = false) Integer status,
+            Pageable pageable,
+            Authentication auth) {
+
+        // 项目里 userId 存在 auth.getName()（字符串），转换为 Long
+        Long userId = Long.valueOf(auth.getName());
+        Page<ApplicationBriefResponse> page = jobseekerApplicationService.listMine(userId, status, pageable);
+        return ResponseEntity.ok(page);
     }
 }
