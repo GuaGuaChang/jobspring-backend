@@ -53,7 +53,7 @@ jobs:
             --region=$REGION \
             --image="$IMAGE_URI" \
             --platform=managed \
-            --service-account=jobspring-deployer@focal-future-473914-d2.iam.gserviceaccount.com\
+            --service-account=${{ secrets.GCP_RUNTIME_SA }}\
             --allow-unauthenticated \
             --add-cloudsql-instances="${{ secrets.CLOUD_SQL_CONN }}" \
             --set-env-vars=SPRING_PROFILES_ACTIVE=prod \
