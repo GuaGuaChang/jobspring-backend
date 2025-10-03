@@ -34,6 +34,7 @@ public class Application {
     private LocalDateTime appliedAt;
 
     @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String resumeProfile;
 
     @Column(length = 1000)
