@@ -1,7 +1,7 @@
 name: Deploy API (Cloud Run with GHCR)
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   build-deploy:
