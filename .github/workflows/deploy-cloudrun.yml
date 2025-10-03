@@ -50,6 +50,7 @@ jobs:
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy jobspring-api \
+            --project=$PROJECT_ID\
             --region=$REGION \
             --image="$IMAGE_URI" \
             --platform=managed \
