@@ -33,7 +33,7 @@ public class Application {
 
     private LocalDateTime appliedAt;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String resumeProfile;
 
     @Column(length = 1000)
