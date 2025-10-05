@@ -3,6 +3,8 @@ package com.jobspring.jobspringbackend.controller;
 import com.jobspring.jobspringbackend.dto.ApplicationBriefResponse;
 import com.jobspring.jobspringbackend.service.HrApplicationService;
 import com.jobspring.jobspringbackend.service.HrCompanyService;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -61,5 +63,25 @@ public class HrController {
         Long userId = Long.valueOf(auth.getName());
         Long companyId = hrCompanyService.getCompanyIdOfHr(userId);
         return ResponseEntity.ok(Map.of("companyId", companyId));
+    }
+
+    //更新某个申请状态
+    @PatchMapping("/applications/{applicationId}/status")
+    @PreAuthorize("hasAnyRole('HR')")
+    public ResponseEntity<ApplicationBriefResponse> updateStatus(
+            @PathVariable Long applicationId,
+            @RequestBody UpdateStatusBody body,
+            Authentication auth) {
+
+        Long hrUserId = Long.valueOf(auth.getName());
+        ApplicationBriefResponse res =
+                hrApplicationService.updateStatus(hrUserId, applicationId, body.getStatus());
+        return ResponseEntity.ok(res);
+    }
+
+    @Data
+    public static class UpdateStatusBody {
+        @NotNull
+        private Integer status;
     }
 }
