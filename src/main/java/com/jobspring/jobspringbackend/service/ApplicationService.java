@@ -1,6 +1,7 @@
 package com.jobspring.jobspringbackend.service;
 
 import com.jobspring.jobspringbackend.dto.ApplicationDTO;
+import com.jobspring.jobspringbackend.dto.ApplicationDetailResponse;
 import com.jobspring.jobspringbackend.entity.Application;
 import com.jobspring.jobspringbackend.entity.Job;
 import com.jobspring.jobspringbackend.entity.User;
@@ -39,6 +40,10 @@ public class ApplicationService {
     @Value("${app.upload.public-base:/uploads}")
     private String publicBase;       // 对外 URL 前缀（由静态资源映射或 Nginx 提供）
 
+    private final ApplicationRepository applicationRepository;
+    private final HrCompanyService hrCompanyService;
+    private final UserRepository userRepository;
+
     @Transactional
     public Long apply(Long jobId, Long userId, ApplicationDTO form, MultipartFile file) {
         Job job = jobRepo.findById(jobId).orElseThrow(() -> new EntityNotFoundException("Job not found"));
@@ -57,6 +62,10 @@ public class ApplicationService {
         app.setStatus(0);
         app.setAppliedAt(LocalDateTime.now());
         app.setResumeProfile(form.getResumeProfile());
+
+        if (user.getProfile() != null) {
+            app.setProfile(user.getProfile());
+        }
 
         // 优先：用户 Profile 的简历 URL
         String resumeUrl = null;
@@ -103,5 +112,53 @@ public class ApplicationService {
                 || ct.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) {
             throw new IllegalArgumentException("Unsupported file type");
         }
+    }
+
+    public ApplicationDetailResponse getApplicationDetail(Long hrUserId, Long companyId, Long applicationId) {
+        // 推断或校验公司 ID
+        Long effectiveCompanyId = (companyId == null)
+                ? hrCompanyService.findCompanyIdByUserId(hrUserId)
+                : validateAndReturn(hrUserId, companyId);
+
+        Application app = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new EntityNotFoundException("Application not found"));
+
+        // 校验这份申请属于该 HR 的公司
+        Long jobCompanyId = app.getJob().getCompany().getId();
+        if (!jobCompanyId.equals(effectiveCompanyId)) {
+            throw new SecurityException("You are not allowed to access this application");
+        }
+
+        return toDetail(app);
+    }
+
+    private Long validateAndReturn(Long userId, Long companyId) {
+        // 查询用户角色
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+
+        // 如果是 Admin，则直接返回，不做 HR 公司归属校验
+        if (user.getRole() == 2) {  // 2 = Admin
+            return companyId;
+        }
+
+        // 否则正常 HR 校验
+        hrCompanyService.assertHrInCompany(userId, companyId);
+        return companyId;
+    }
+
+    private ApplicationDetailResponse toDetail(Application a) {
+        ApplicationDetailResponse r = new ApplicationDetailResponse();
+        r.setId(a.getId());
+        r.setJobId(a.getJob().getId());
+        r.setJobTitle(a.getJob().getTitle());
+        r.setApplicantId(a.getUser().getId());
+        r.setApplicantName(a.getUser().getFullName());
+        r.setApplicantEmail(a.getUser().getEmail());
+        r.setStatus(a.getStatus());
+        r.setAppliedAt(a.getAppliedAt());
+        r.setResumeUrl(a.getResumeUrl());
+        r.setResumeProfile(a.getResumeProfile());
+        return r;
     }
 }

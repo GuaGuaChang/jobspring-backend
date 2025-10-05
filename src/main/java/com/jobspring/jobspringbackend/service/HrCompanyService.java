@@ -27,6 +27,6 @@ public class HrCompanyService {
     @Transactional(readOnly = true)
     public Long getCompanyIdOfHr(Long userId) {
         return memberRepo.findCompanyIdByHrUserId(userId)
-                .orElseThrow(() -> new AccessDeniedException("当前用户未绑定公司或不是 HR"));
+                .orElseThrow(() -> new AccessDeniedException("The current user is not bound to a company or is not an HR"));
     }
 }
