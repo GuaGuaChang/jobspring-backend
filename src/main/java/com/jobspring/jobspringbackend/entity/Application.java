@@ -36,6 +36,7 @@ public class Application {
     @Column(columnDefinition = "TEXT")
     private String resumeProfile;
 
-    @Column(length = 1000)
-    private String resumeUrl;
+    @Lob
+    @Column(name = "resume_url", columnDefinition = "LONGTEXT")
+    private String resumeUrl; // 现在存 base64 data URL
 }

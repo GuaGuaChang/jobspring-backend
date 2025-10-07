@@ -46,7 +46,7 @@ public class ApplicationService {
 
     @Transactional
     public Long apply(Long jobId, Long userId, ApplicationDTO form, MultipartFile file) {
-        Job job = jobRepo.findById(jobId).orElseThrow(() -> new EntityNotFoundException("Job not found"));
+/*        Job job = jobRepo.findById(jobId).orElseThrow(() -> new EntityNotFoundException("Job not found"));
         if (job.getStatus() != 0) {
             throw new IllegalStateException("Job inactive");
         }
@@ -80,10 +80,71 @@ public class ApplicationService {
         app.setResumeUrl(resumeUrl);
 
         appRepo.save(app);
+        return app.getId();*/
+
+        // 1) 基础校验
+        Job job = jobRepo.findById(jobId)
+                .orElseThrow(() -> new EntityNotFoundException("Job not found"));
+        if (job.getStatus() != 0) {
+            throw new IllegalStateException("Job inactive");
+        }
+
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        if (appRepo.existsByJobAndUser(job, user)) {
+            throw new IllegalArgumentException("Already applied");
+        }
+
+        // 2) 组装 Application
+        Application app = new Application();
+        app.setJob(job);
+        app.setUser(user);
+        app.setStatus(0);
+        app.setAppliedAt(LocalDateTime.now());
+        app.setResumeProfile(form.getResumeProfile());
+
+        // 关键：优先取 Profile.fileUrl；否则用上传文件转 base64 写入 resumeUrl
+        String resumeUrlToSave = null;
+
+        // 2.1 优先：用户 Profile 的 fileUrl
+        if (user.getProfile() != null && user.getProfile().getFileUrl() != null
+                && !user.getProfile().getFileUrl().isBlank()) {
+            resumeUrlToSave = user.getProfile().getFileUrl();
+            // 绑定 Profile，避免后续查询 JOIN 丢失
+            app.setProfile(user.getProfile());
+        } else {
+            // 2.2 其次：表单文件 → base64 data URL
+            if (file != null && !file.isEmpty()) {
+                validateFile(file); // 你已有：大小/类型校验
+                try {
+                    String ct = Optional.ofNullable(file.getContentType())
+                            .filter(s -> !s.isBlank())
+                            .orElse("application/octet-stream");
+                    String base64 = java.util.Base64.getEncoder().encodeToString(file.getBytes());
+                    resumeUrlToSave = "data:" + ct + ";base64," + base64;
+                } catch (IOException e) {
+                    throw new IllegalStateException("Failed to read file", e);
+                }
+            }
+            // 如果你的 Application.profile 非必填，可以不设；必填则根据业务决定如何处理
+            if (user.getProfile() != null) {
+                app.setProfile(user.getProfile());
+            }
+        }
+
+        // 2.3 如果两者都没有，给出明确错误（可按需改成允许空）
+        if (resumeUrlToSave == null) {
+            throw new IllegalArgumentException("No resume provided: neither profile.fileUrl nor uploaded file");
+        }
+
+        app.setResumeUrl(resumeUrlToSave);
+
+        // 3) 保存
+        appRepo.save(app);
         return app.getId();
     }
 
-    private String saveToLocal(MultipartFile file, String keyPrefix) {
+   /* private String saveToLocal(MultipartFile file, String keyPrefix) {
         try {
             String safePrefix = keyPrefix.replaceAll("[^a-zA-Z0-9/_-]", "_");
             String filename = System.currentTimeMillis() + "_" +
@@ -102,7 +163,7 @@ public class ApplicationService {
         } catch (java.io.IOException e) {
             throw new IllegalStateException("File upload failed", e); // 运行时异常
         }
-    }
+    }*/
 
     private void validateFile(MultipartFile f) {
         if (f.getSize() > 10 * 1024 * 1024) throw new IllegalArgumentException("File too large");
