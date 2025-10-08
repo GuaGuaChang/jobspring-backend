@@ -130,4 +130,16 @@ public class AdminController {
         ReviewDTO review = reviewService.rejectReview(id, userId, request.getNote());
         return ResponseEntity.ok(review);
     }
+
+    /**
+     * 将某用户角色设置为 HR（1）
+     * 示例：PATCH /api/admin/users/123/make-hr
+     * Header: Authorization: Bearer <ADMIN_JWT>
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{userId}/make-hr")
+    public ResponseEntity<Void> makeHr(@PathVariable Long userId) {
+        adminService.makeHr(userId);
+        return ResponseEntity.noContent().build();
+    }
 }
