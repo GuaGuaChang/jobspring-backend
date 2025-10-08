@@ -1,25 +1,18 @@
 package com.jobspring.jobspringbackend.controller;
 
-import com.jobspring.jobspringbackend.dto.ApplicationBriefResponse;
-import com.jobspring.jobspringbackend.dto.JobDTO;
-import com.jobspring.jobspringbackend.dto.NoteDTO;
-import com.jobspring.jobspringbackend.dto.ReviewDTO;
+import com.jobspring.jobspringbackend.dto.*;
 import com.jobspring.jobspringbackend.entity.Job;
-import com.jobspring.jobspringbackend.entity.Review;
-import com.jobspring.jobspringbackend.service.AdminService;
-import com.jobspring.jobspringbackend.service.HrApplicationService;
-import com.jobspring.jobspringbackend.service.JobService;
-import com.jobspring.jobspringbackend.service.ReviewService;
+import com.jobspring.jobspringbackend.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,6 +36,8 @@ public class AdminController {
     @Autowired
     private HrApplicationService hrApplicationService;
 
+    @Autowired
+    private CompanyService companyService;
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/status")
@@ -137,5 +132,12 @@ public class AdminController {
     public ResponseEntity<Void> makeHr(@PathVariable Long userId) {
         adminService.makeHr(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/company/list")
+    public ResponseEntity<Page<CompanyDTO>> getAllCompanies(Pageable pageable) {
+        Page<CompanyDTO> companies = companyService.getAllCompanies(pageable);
+        return ResponseEntity.ok(companies);
     }
 }
