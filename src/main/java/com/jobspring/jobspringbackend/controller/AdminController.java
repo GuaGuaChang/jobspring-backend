@@ -131,11 +131,7 @@ public class AdminController {
         return ResponseEntity.ok(review);
     }
 
-    /**
-     * 将某用户角色设置为 HR（1）
-     * 示例：PATCH /api/admin/users/123/make-hr
-     * Header: Authorization: Bearer <ADMIN_JWT>
-     */
+    //将某用户角色设置为 HR（1）
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{userId}/make-hr")
     public ResponseEntity<Void> makeHr(@PathVariable Long userId) {
