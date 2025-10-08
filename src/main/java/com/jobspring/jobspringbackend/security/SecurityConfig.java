@@ -1,6 +1,7 @@
 package com.jobspring.jobspringbackend.security;
 
 import com.jobspring.jobspringbackend.exception.ErrorCode;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -23,29 +24,26 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtService jwtService;
+    private final JsonAuthHandlers json;
 
-    public SecurityConfig(JwtService jwtService) {
-        this.jwtService = jwtService;
-    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 401 Unauthenticated
     @Bean
     public AuthenticationEntryPoint restEntryPoint() {
-        return (req, resp, ex) -> JsonAuthHandlers.write(req, resp, ErrorCode.UNAUTHORIZED, "Unauthorized");
+        return (req, resp, ex) -> json.write(req, resp, ErrorCode.UNAUTHORIZED, "Unauthorized");
     }
 
-    // 403 No permission
     @Bean
     public AccessDeniedHandler restAccessDeniedHandler() {
-        return (req, resp, ex) -> JsonAuthHandlers.write(req, resp, ErrorCode.FORBIDDEN, "Forbidden");
+        return (req, resp, ex) -> json.write(req, resp, ErrorCode.FORBIDDEN, "Forbidden");
     }
 
     @Bean
@@ -73,7 +71,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
-        String origins = System.getenv().getOrDefault("CORS_ALLOW_ORIGINS", "*");
+        String origins = System.getenv().getOrDefault("CORS_ALLOW_ORIGINS", "https://job-spring-frontend.vercel.app");
         for (String origin : origins.split(",")) {
             cfg.addAllowedOrigin(origin.trim());
         }
