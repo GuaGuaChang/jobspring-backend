@@ -10,6 +10,7 @@ import java.util.List;
 public class JobDTO {
     private Long id;
     private String title;
+    private Long companyId;
     private String company;
     private String location;
     private String employmentType;
