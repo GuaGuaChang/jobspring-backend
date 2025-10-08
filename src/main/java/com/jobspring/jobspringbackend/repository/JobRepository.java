@@ -36,4 +36,10 @@ public interface JobRepository extends JpaRepository<Job, Long> {
             "LOWER(j.location) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(j.company.name) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Job> adminSearchJobs(@Param("keyword") String keyword, Pageable pageable);
+
+    // 分页查某公司的所有岗位
+    Page<Job> findByCompanyId(Long companyId, Pageable pageable);
+
+    // 分页查某公司 + 指定状态（0=上架/1=下线）
+    Page<Job> findByCompanyIdAndStatus(Long companyId, Integer status, Pageable pageable);
 }
