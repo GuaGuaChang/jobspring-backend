@@ -1,5 +1,6 @@
 package com.jobspring.jobspringbackend.service;
 
+
 import com.jobspring.jobspringbackend.dto.*;
 import com.jobspring.jobspringbackend.entity.Company;
 
@@ -224,6 +225,5 @@ public class AdminService {
         dto.setIsActive(user.getIsActive());
         return dto;
     }
-
 }
 
