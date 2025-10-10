@@ -16,10 +16,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("""
                 SELECT u FROM User u
-                WHERE (:email IS NULL OR u.email LIKE %:email%)
-                AND (:fullName IS NULL OR u.fullName LIKE %:fullName%)
-                AND (:phone IS NULL OR u.phone LIKE %:phone%)
-                AND (:id IS NULL OR u.id = :id)
+                WHERE u.role <> 2
+                  AND (:email IS NULL OR u.email LIKE %:email%)
+                  AND (:fullName IS NULL OR u.fullName LIKE %:fullName%)
+                  AND (:phone IS NULL OR u.phone LIKE %:phone%)
+                  AND (:id IS NULL OR u.id = :id)
             """)
-    Page<User> searchUsers(@Param("email") String email, @Param("fullName") String fullName, @Param("phone") String phone, @Param("id") Long id, Pageable pageable);
+    Page<User> searchUsers(@Param("email") String email,
+                           @Param("fullName") String fullName,
+                           @Param("phone") String phone,
+                           @Param("id") Long id,
+                           Pageable pageable);
+
 }

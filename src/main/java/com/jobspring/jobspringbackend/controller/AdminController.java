@@ -11,12 +11,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -155,9 +162,28 @@ public class AdminController {
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/company/create")
-    public ResponseEntity<CompanyDTO> createCompany(@RequestBody CompanyDTO companyDTO) {
+    @PostMapping(value = "/company/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<CompanyDTO> createCompany(
+            @RequestPart("company") CompanyDTO companyDTO,
+            @RequestPart(value = "logo", required = false) MultipartFile logoFile) throws IOException {
+
+        if (logoFile != null && !logoFile.isEmpty()) {
+            String filename = System.currentTimeMillis() + "_" + logoFile.getOriginalFilename();
+            Path uploadPath = Paths.get("uploads"); // 相对路径
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+            Path filePath = uploadPath.resolve(filename);
+            Files.copy(logoFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            companyDTO.setLogoUrl("/uploads/" + filename); // 前端访问 URL
+        }
+
         CompanyDTO savedCompany = companyService.createCompany(companyDTO);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(savedCompany);
     }
+
+
 }

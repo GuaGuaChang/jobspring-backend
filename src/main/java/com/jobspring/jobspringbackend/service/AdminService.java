@@ -95,10 +95,11 @@ public class AdminService {
     }
 
     public Page<UserDTO> searchUsers(String email, String fullName, String phone, Long id, Pageable pageable) {
-        Page<User> users = userRepository.searchUsers(email, fullName, phone, id, pageable);
-        if (users.isEmpty()) {
-            throw new BizException(ErrorCode.NOT_FOUND, "User not found");
-        }
+        String emailParam = (email != null && !email.isBlank()) ? email : null;
+        String fullNameParam = (fullName != null && !fullName.isBlank()) ? fullName : null;
+        String phoneParam = (phone != null && !phone.isBlank()) ? phone : null;
+
+        Page<User> users = userRepository.searchUsers(emailParam, fullNameParam, phoneParam, id, pageable);
         return users.map(this::toDTO);
     }
 
@@ -112,5 +113,6 @@ public class AdminService {
         dto.setIsActive(user.getIsActive());
         return dto;
     }
+
 }
 
