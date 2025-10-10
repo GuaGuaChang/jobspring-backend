@@ -107,19 +107,10 @@ public class HrController {
     @GetMapping("/jobs")
     public ResponseEntity<Page<HrJobResponse>> search(
             Authentication auth,
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) Integer status,
-            @RequestParam(required = false) String location,
-            @RequestParam(required = false) Integer employmentType,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime postedFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime postedTo,
-            @RequestParam(required = false) BigDecimal salaryMin,
-            @RequestParam(required = false) BigDecimal salaryMax,
-            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String q,
             Pageable pageable
     ) {
-        Long userId = Long.valueOf(auth.getName()); // 你的项目若用别的方式取 userId，请相应替换
-        var c = new HrJobSearchCriteria(title, status, location, employmentType, postedFrom, postedTo, salaryMin, salaryMax, keyword);
-        return ResponseEntity.ok(hrJobService.search(userId, c, pageable));
+        Long userId = Long.valueOf(auth.getName());
+        return ResponseEntity.ok(hrJobService.search(userId, q, pageable));
     }
 }

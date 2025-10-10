@@ -151,26 +151,16 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
+    // Admin 通用搜索：q 在多字段里 OR 匹配，分页/排序
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/jobs")
     public ResponseEntity<Page<JobSearchResponse>> search(
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) Integer status,
-            @RequestParam(required = false) Long companyId,
-            @RequestParam(required = false) String location,
-            @RequestParam(required = false) Integer employmentType,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime postedFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime postedTo,
-            @RequestParam(required = false) BigDecimal salaryMin,
-            @RequestParam(required = false) BigDecimal salaryMax,
-            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String q,
             Pageable pageable
     ) {
-        var c = new com.jobspring.jobspringbackend.dto.JobSearchCriteria(
-                title, status, companyId, location, employmentType, postedFrom, postedTo, salaryMin, salaryMax, keyword
-        );
-        return ResponseEntity.ok(adminService.search(c, pageable));
+        return ResponseEntity.ok(adminService.search(q, pageable));
     }
+
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/company/list")

@@ -38,7 +38,8 @@ public class JobService {
 
     private final ApplicationEventPublisher publisher;
 
-    public record JobDeactivatedEvent(Long companyId, Long jobId) {}
+    public record JobDeactivatedEvent(Long companyId, Long jobId) {
+    }
 
     public List<Job> getAllJobs() {
         return jobRepository.findAll();
