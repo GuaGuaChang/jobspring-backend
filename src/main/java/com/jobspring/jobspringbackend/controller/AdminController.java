@@ -1,6 +1,7 @@
 package com.jobspring.jobspringbackend.controller;
 
 import com.jobspring.jobspringbackend.dto.*;
+import com.jobspring.jobspringbackend.entity.Company;
 import com.jobspring.jobspringbackend.entity.Job;
 import com.jobspring.jobspringbackend.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -139,5 +140,24 @@ public class AdminController {
     public ResponseEntity<Page<CompanyDTO>> getAllCompanies(Pageable pageable) {
         Page<CompanyDTO> companies = companyService.getAllCompanies(pageable);
         return ResponseEntity.ok(companies);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/search_user")
+    public ResponseEntity<Page<UserDTO>> searchUsers(
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String fullName,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) Long id,
+            Pageable pageable) {
+
+        Page<UserDTO> result = adminService.searchUsers(email, fullName, phone, id, pageable);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/company/create")
+    public ResponseEntity<CompanyDTO> createCompany(@RequestBody CompanyDTO companyDTO) {
+        CompanyDTO savedCompany = companyService.createCompany(companyDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedCompany);
     }
 }

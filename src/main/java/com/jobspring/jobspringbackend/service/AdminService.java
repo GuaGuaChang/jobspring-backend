@@ -1,8 +1,11 @@
 package com.jobspring.jobspringbackend.service;
 
 import com.jobspring.jobspringbackend.dto.JobDTO;
+import com.jobspring.jobspringbackend.dto.UserDTO;
 import com.jobspring.jobspringbackend.entity.Job;
 import com.jobspring.jobspringbackend.entity.User;
+import com.jobspring.jobspringbackend.exception.BizException;
+import com.jobspring.jobspringbackend.exception.ErrorCode;
 import com.jobspring.jobspringbackend.repository.JobRepository;
 import com.jobspring.jobspringbackend.repository.SkillRepository;
 import com.jobspring.jobspringbackend.repository.UserRepository;
@@ -89,6 +92,25 @@ public class AdminService {
 
         u.setRole(1);
         userRepository.save(u);
+    }
+
+    public Page<UserDTO> searchUsers(String email, String fullName, String phone, Long id, Pageable pageable) {
+        Page<User> users = userRepository.searchUsers(email, fullName, phone, id, pageable);
+        if (users.isEmpty()) {
+            throw new BizException(ErrorCode.NOT_FOUND, "User not found");
+        }
+        return users.map(this::toDTO);
+    }
+
+    private UserDTO toDTO(User user) {
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setEmail(user.getEmail());
+        dto.setPhone(user.getPhone());
+        dto.setFullName(user.getFullName());
+        dto.setRole(user.getRole());
+        dto.setIsActive(user.getIsActive());
+        return dto;
     }
 }
 

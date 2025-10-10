@@ -6,6 +6,8 @@ import com.jobspring.jobspringbackend.dto.JobResponse;
 import com.jobspring.jobspringbackend.entity.Company;
 import com.jobspring.jobspringbackend.entity.Job;
 import com.jobspring.jobspringbackend.entity.Review;
+import com.jobspring.jobspringbackend.exception.BizException;
+import com.jobspring.jobspringbackend.exception.ErrorCode;
 import com.jobspring.jobspringbackend.repository.CompanyRepository;
 import com.jobspring.jobspringbackend.repository.JobRepository;
 import com.jobspring.jobspringbackend.repository.ReviewRepository;
@@ -95,6 +97,34 @@ public class CompanyService {
         }
 
         return dto;
+    }
+
+    public CompanyDTO createCompany(CompanyDTO dto) {
+
+        if (companyRepository.existsByName(dto.getName())) {
+            throw new BizException(ErrorCode.CONFLICT, "already exists");
+        }
+
+        Company company = new Company();
+        company.setName(dto.getName());
+        company.setWebsite(dto.getWebsite());
+        company.setSize(dto.getSize());
+        company.setLogoUrl(dto.getLogoUrl());
+        company.setDescription(dto.getDescription());
+        company.setCreatedBy(dto.getCreatedBy());
+
+        Company saved = companyRepository.save(company);
+
+        CompanyDTO result = new CompanyDTO();
+        result.setId(saved.getId());
+        result.setName(saved.getName());
+        result.setWebsite(saved.getWebsite());
+        result.setSize(saved.getSize());
+        result.setLogoUrl(saved.getLogoUrl());
+        result.setDescription(saved.getDescription());
+        result.setCreatedBy(saved.getCreatedBy());
+
+        return result;
     }
 }
 
