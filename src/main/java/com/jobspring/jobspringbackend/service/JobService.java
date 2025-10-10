@@ -9,16 +9,19 @@ import com.jobspring.jobspringbackend.entity.Job;
 import com.jobspring.jobspringbackend.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 
 @Service
+@RequiredArgsConstructor
 public class JobService {
 
     @Autowired
@@ -30,8 +33,12 @@ public class JobService {
     @Autowired
     private CompanyMemberRepository companyMemberRepository;
 
-    @Autowired
-    private ApplicationRepository applicationRepository;
+//    @Autowired
+//    private ApplicationRepository applicationRepository;
+
+    private final ApplicationEventPublisher publisher;
+
+    public record JobDeactivatedEvent(Long companyId, Long jobId) {}
 
     public List<Job> getAllJobs() {
         return jobRepository.findAll();
@@ -179,8 +186,9 @@ public class JobService {
         job.setStatus(1);
         jobRepository.save(job);
 
-        // 2. 同步更新所有相关申请状态为 7（无效）
-        applicationRepository.updateStatusByJobId(jobId, 7);
+        // 2. 同步更新所有相关申请状态为 4（无效）
+        publisher.publishEvent(new JobDeactivatedEvent(companyId, jobId));
+        //applicationRepository.updateStatusByJobId(jobId, 4);
     }
 
     // HR 查看本公司岗位（包含上下线）
