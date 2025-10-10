@@ -1,26 +1,33 @@
 package com.jobspring.jobspringbackend.controller;
 
 import com.jobspring.jobspringbackend.dto.*;
+import com.jobspring.jobspringbackend.entity.Company;
 import com.jobspring.jobspringbackend.entity.Job;
-import com.jobspring.jobspringbackend.entity.Review;
-import com.jobspring.jobspringbackend.service.AdminService;
-import com.jobspring.jobspringbackend.service.HrApplicationService;
-import com.jobspring.jobspringbackend.service.JobService;
-import com.jobspring.jobspringbackend.service.ReviewService;
+import com.jobspring.jobspringbackend.service.*;
+import com.jobspring.jobspringbackend.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
 
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -43,6 +50,10 @@ public class AdminController {
     @Autowired
     private HrApplicationService hrApplicationService;
 
+    @Autowired
+    private CompanyService companyService;
+    @Autowired
+    private CompanyService companyService;
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/status")
@@ -159,5 +170,48 @@ public class AdminController {
                 title, status, companyId, location, employmentType, postedFrom, postedTo, salaryMin, salaryMax, keyword
         );
         return ResponseEntity.ok(adminService.search(c, pageable));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/company/list")
+    public ResponseEntity<Page<CompanyDTO>> getAllCompanies(Pageable pageable) {
+        Page<CompanyDTO> companies = companyService.getAllCompanies(pageable);
+        return ResponseEntity.ok(companies);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/search_user")
+    public ResponseEntity<Page<UserDTO>> searchUsers(
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String fullName,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) Long id,
+            Pageable pageable) {
+
+        Page<UserDTO> result = adminService.searchUsers(email, fullName, phone, id, pageable);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping(value = "/company/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<CompanyDTO> createCompany(
+            @RequestPart("company") CompanyDTO companyDTO,
+            @RequestPart(value = "logo", required = false) MultipartFile logoFile) throws IOException {
+
+        if (logoFile != null && !logoFile.isEmpty()) {
+            String filename = System.currentTimeMillis() + "_" + logoFile.getOriginalFilename();
+            Path uploadPath = Paths.get("uploads"); // 相对路径
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+            Path filePath = uploadPath.resolve(filename);
+            Files.copy(logoFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            companyDTO.setLogoUrl("/uploads/" + filename); // 前端访问 URL
+        }
+
+        CompanyDTO savedCompany = companyService.createCompany(companyDTO);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedCompany);
     }
 }

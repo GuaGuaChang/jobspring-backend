@@ -63,6 +63,7 @@ public class JobService {
 
         if (job.getCompany() != null) {
             dto.setCompany(job.getCompany().getName());
+            dto.setCompanyId(job.getCompany().getId());
         }
 
         dto.setDescription(job.getDescription());

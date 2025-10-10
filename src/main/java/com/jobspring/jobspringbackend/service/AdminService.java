@@ -2,9 +2,12 @@ package com.jobspring.jobspringbackend.service;
 
 import com.jobspring.jobspringbackend.dto.*;
 import com.jobspring.jobspringbackend.entity.Company;
+
 import com.jobspring.jobspringbackend.entity.Job;
 import com.jobspring.jobspringbackend.entity.User;
 import com.jobspring.jobspringbackend.repository.CompanyRepository;
+import com.jobspring.jobspringbackend.exception.BizException;
+import com.jobspring.jobspringbackend.exception.ErrorCode;
 import com.jobspring.jobspringbackend.repository.JobRepository;
 import com.jobspring.jobspringbackend.repository.SkillRepository;
 import com.jobspring.jobspringbackend.repository.UserRepository;
@@ -201,5 +204,26 @@ public class AdminService {
                 j.getPostedAt()
         );
     }
+
+    public Page<UserDTO> searchUsers(String email, String fullName, String phone, Long id, Pageable pageable) {
+        String emailParam = (email != null && !email.isBlank()) ? email : null;
+        String fullNameParam = (fullName != null && !fullName.isBlank()) ? fullName : null;
+        String phoneParam = (phone != null && !phone.isBlank()) ? phone : null;
+
+        Page<User> users = userRepository.searchUsers(emailParam, fullNameParam, phoneParam, id, pageable);
+        return users.map(this::toDTO);
+    }
+
+    private UserDTO toDTO(User user) {
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setEmail(user.getEmail());
+        dto.setPhone(user.getPhone());
+        dto.setFullName(user.getFullName());
+        dto.setRole(user.getRole());
+        dto.setIsActive(user.getIsActive());
+        return dto;
+    }
+
 }
 

@@ -52,7 +52,7 @@ public class ReviewService {
         review.setReviewedBy(null);
         review.setReviewNote(null); // Set reviewNote to null
         review.setPublicAt(null); // Set publicAt to null initially
-
+        review.setImageUrl(jobseekerReviewDTO.getImageUrl());
         Review saved = reviewRepository.save(review);
 
         return toDto(saved);
