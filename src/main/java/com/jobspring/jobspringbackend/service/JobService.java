@@ -9,6 +9,7 @@ import com.jobspring.jobspringbackend.entity.Job;
 import com.jobspring.jobspringbackend.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class JobService {
 
     @Autowired
@@ -35,10 +37,6 @@ public class JobService {
 //    private ApplicationRepository applicationRepository;
 
     private final ApplicationEventPublisher publisher;
-
-    public JobService(ApplicationEventPublisher publisher) {
-        this.publisher = publisher;
-    }
 
     public record JobDeactivatedEvent(Long companyId, Long jobId) {}
 
