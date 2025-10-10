@@ -30,8 +30,16 @@ public class JobService {
     @Autowired
     private CompanyMemberRepository companyMemberRepository;
 
-    @Autowired
-    private ApplicationRepository applicationRepository;
+//    @Autowired
+//    private ApplicationRepository applicationRepository;
+
+    private final ApplicationEventPublisher publisher;
+
+    public JobService(ApplicationEventPublisher publisher) {
+        this.publisher = publisher;
+    }
+
+    public record JobDeactivatedEvent(Long companyId, Long jobId) {}
 
     public List<Job> getAllJobs() {
         return jobRepository.findAll();
@@ -179,8 +187,9 @@ public class JobService {
         job.setStatus(1);
         jobRepository.save(job);
 
-        // 2. 同步更新所有相关申请状态为 7（无效）
-        applicationRepository.updateStatusByJobId(jobId, 7);
+        // 2. 同步更新所有相关申请状态为 4（无效）
+        publisher.publishEvent(new JobDeactivatedEvent(companyId, jobId));
+        //applicationRepository.updateStatusByJobId(jobId, 4);
     }
 
     // HR 查看本公司岗位（包含上下线）
