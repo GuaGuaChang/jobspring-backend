@@ -7,14 +7,22 @@ import com.jobspring.jobspringbackend.entity.User;
 import com.jobspring.jobspringbackend.repository.JobRepository;
 import com.jobspring.jobspringbackend.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -24,8 +32,8 @@ public class HrJobService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
 
-    @org.springframework.transaction.annotation.Transactional(readOnly = true)
-    public Page<HrJobResponse> search(Long hrUserId, HrJobSearchCriteria c, Pageable pageable) {
+    @Transactional(readOnly = true)
+    public Page<HrJobResponse> search(Long hrUserId, String q, Pageable pageable) {
         // 1) 找到 HR 的公司
         User u = userRepository.findWithCompanyById(hrUserId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
@@ -34,69 +42,104 @@ public class HrJobService {
         }
         Long companyId = u.getCompany().getId();
 
-        // 2) 构建仅限该公司的筛选条件
+        // 2) 规格（限定公司 + 通用搜索）
         Specification<Job> spec = (root, query, cb) -> {
-            List<jakarta.persistence.criteria.Predicate> ps = new ArrayList<>();
+            List<Predicate> all = new ArrayList<>();
+            // 公司限定
+            all.add(cb.equal(root.get("company").get("id"), companyId));
 
-            // 限定公司
-            ps.add(cb.equal(root.get("company").get("id"), companyId));
+            if (StringUtils.hasText(q)) {
+                Join<Object, Object> companyJoin = root.join("company", JoinType.LEFT);
+                String[] tokens = Arrays.stream(q.trim().split("\\s+"))
+                        .filter(StringUtils::hasText)
+                        .toArray(String[]::new);
 
-            if (StringUtils.hasText(c.title())) {
-                ps.add(cb.like(cb.lower(root.get("title")), "%" + c.title().toLowerCase() + "%"));
-            }
-            if (c.status() != null) {
-                ps.add(cb.equal(root.get("status"), c.status()));
-            }
-            if (StringUtils.hasText(c.location())) {
-                ps.add(cb.like(cb.lower(root.get("location")), "%" + c.location().toLowerCase() + "%"));
-            }
-            if (c.employmentType() != null) {
-                ps.add(cb.equal(root.get("employmentType"), c.employmentType()));
-            }
-            if (c.postedFrom() != null) {
-                ps.add(cb.greaterThanOrEqualTo(root.get("postedAt"), c.postedFrom()));
-            }
-            if (c.postedTo() != null) {
-                ps.add(cb.lessThanOrEqualTo(root.get("postedAt"), c.postedTo()));
-            }
-            if (StringUtils.hasText(c.keyword())) {
-                String kw = "%" + c.keyword().toLowerCase() + "%";
-                ps.add(cb.or(
-                        cb.like(cb.lower(root.get("title")), kw),
-                        cb.like(cb.lower(root.get("description")), kw)
-                ));
-            }
-            // 薪资区间重叠
-            if (c.salaryMin() != null || c.salaryMax() != null) {
-                var jobMin = root.<BigDecimal>get("salaryMin");
-                var jobMax = root.<BigDecimal>get("salaryMax");
+                List<Predicate> andPerToken = new ArrayList<>();
 
-                var lowerOk = (c.salaryMax() != null)
-                        ? cb.or(cb.isNull(jobMin), cb.lessThanOrEqualTo(jobMin, c.salaryMax()))
-                        : cb.conjunction();
-                var upperOk = (c.salaryMin() != null)
-                        ? cb.or(cb.isNull(jobMax), cb.greaterThanOrEqualTo(jobMax, c.salaryMin()))
-                        : cb.conjunction();
+                for (String t : tokens) {
+                    String kwLower = "%" + t.toLowerCase() + "%";
+                    List<Predicate> orFields = new ArrayList<>();
 
-                ps.add(cb.and(lowerOk, upperOk));
+                    // 文本字段（title/location/company.name 用 lower；description 是 LOB，不用 lower）
+                    orFields.add(cb.like(cb.lower(root.get("title")), kwLower));
+                    orFields.add(cb.like(root.get("description").as(String.class), "%" + t + "%")); // 修法2
+                    orFields.add(cb.like(cb.lower(root.get("location")), kwLower));
+                    orFields.add(cb.like(cb.lower(companyJoin.get("name")), kwLower));
+
+                    // 纯数字：id / status / 薪资覆盖
+                    if (t.matches("\\d+")) {
+                        long asLong = Long.parseLong(t);
+                        orFields.add(cb.equal(root.get("id"), asLong));
+                        orFields.add(cb.equal(root.get("status"), (int) asLong));
+
+                        BigDecimal val = new BigDecimal(t);
+                        var jobMin = root.<BigDecimal>get("salaryMin");
+                        var jobMax = root.<BigDecimal>get("salaryMax");
+                        var lowerOk = cb.or(cb.isNull(jobMin), cb.lessThanOrEqualTo(jobMin, val));
+                        var upperOk = cb.or(cb.isNull(jobMax), cb.greaterThanOrEqualTo(jobMax, val));
+                        orFields.add(cb.and(lowerOk, upperOk));
+                    }
+
+                    // 用工类型关键词 → employmentType
+                    Integer et = mapEmploymentType(t);
+                    if (et != null) {
+                        orFields.add(cb.equal(root.get("employmentType"), et));
+                    }
+
+                    // 日期：2025-10-10 / 2025-10-10T15:12:00
+                    LocalDateTime[] range = tryParseDateOrDateTime(t);
+                    if (range != null) {
+                        orFields.add(cb.between(root.get("postedAt"), range[0], range[1]));
+                    }
+
+                    andPerToken.add(cb.or(orFields.toArray(new Predicate[0])));
+                }
+
+                all.add(cb.and(andPerToken.toArray(new Predicate[0])));
             }
 
-            return cb.and(ps.toArray(new jakarta.persistence.criteria.Predicate[0]));
+            return cb.and(all.toArray(new Predicate[0]));
         };
 
-        return jobRepository.findAll(spec, pageable).map(this::toResp);
+        return jobRepository.findAll(spec, pageable).map(j ->
+                new HrJobResponse(
+                        j.getId(),
+                        j.getTitle(),
+                        j.getLocation(),
+                        j.getEmploymentType(),
+                        j.getSalaryMin(),
+                        j.getSalaryMax(),
+                        j.getStatus(),
+                        j.getPostedAt()
+                )
+        );
     }
 
-    private HrJobResponse toResp(Job j) {
-        return new HrJobResponse(
-                j.getId(),
-                j.getTitle(),
-                j.getLocation(),
-                j.getEmploymentType(),
-                j.getSalaryMin(),
-                j.getSalaryMax(),
-                j.getStatus(),
-                j.getPostedAt()
-        );
+    private Integer mapEmploymentType(String t) {
+        String s = t.toLowerCase();
+        if (List.of("1", "full", "fulltime", "full-time", "全职").contains(s)) return 1;
+        if (List.of("2", "intern", "实习", "实习生").contains(s)) return 2;
+        if (List.of("3", "contract", "合同", "合同工", "兼职合同").contains(s)) return 3;
+        return null;
+    }
+
+    /**
+     * "2025-10-10" → 当天范围；"2025-10-10T15:12:00" → ±1 分钟范围（可按需调整）
+     */
+    private LocalDateTime[] tryParseDateOrDateTime(String t) {
+        try {
+            LocalDate d = LocalDate.parse(t);
+            return new LocalDateTime[]{
+                    d.atStartOfDay(),
+                    d.plusDays(1).atStartOfDay().minusNanos(1)
+            };
+        } catch (DateTimeParseException ignore) {
+        }
+        try {
+            LocalDateTime dt = LocalDateTime.parse(t);
+            return new LocalDateTime[]{dt.minusMinutes(1), dt.plusMinutes(1)};
+        } catch (DateTimeParseException ignore) {
+        }
+        return null;
     }
 }
