@@ -3,16 +3,22 @@ package com.jobspring.jobspringbackend.controller;
 import com.jobspring.jobspringbackend.dto.ApplicationBriefResponse;
 import com.jobspring.jobspringbackend.service.HrApplicationService;
 import com.jobspring.jobspringbackend.service.HrCompanyService;
+import com.jobspring.jobspringbackend.service.HrJobService;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import com.jobspring.jobspringbackend.dto.HrJobResponse;
+import com.jobspring.jobspringbackend.dto.HrJobSearchCriteria;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 
@@ -24,6 +30,8 @@ public class HrController {
     private final HrApplicationService hrApplicationService;
 
     private final HrCompanyService hrCompanyService;
+
+    private final HrJobService hrJobService;
 
     // 方式一：自动取 HR 自己的公司
     @PreAuthorize("hasRole('HR')")
@@ -83,5 +91,35 @@ public class HrController {
     public static class UpdateStatusBody {
         @NotNull
         private Integer status;
+    }
+
+    // HR 获取自己公司的名字（仅名称）
+    @PreAuthorize("hasRole('HR')")
+    @GetMapping("/company-name")
+    public ResponseEntity<String> myCompanyName(Authentication auth) {
+        Long userId = Long.valueOf(auth.getName());
+        String name = hrCompanyService.getMyCompanyName(userId);
+        return ResponseEntity.ok(name);
+    }
+
+    // HR 搜索自己公司内的岗位（分页 + 排序）
+    @PreAuthorize("hasRole('HR')")
+    @GetMapping("/jobs")
+    public ResponseEntity<Page<HrJobResponse>> search(
+            Authentication auth,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) Integer employmentType,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime postedFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime postedTo,
+            @RequestParam(required = false) BigDecimal salaryMin,
+            @RequestParam(required = false) BigDecimal salaryMax,
+            @RequestParam(required = false) String keyword,
+            Pageable pageable
+    ) {
+        Long userId = Long.valueOf(auth.getName()); // 你的项目若用别的方式取 userId，请相应替换
+        var c = new HrJobSearchCriteria(title, status, location, employmentType, postedFrom, postedTo, salaryMin, salaryMax, keyword);
+        return ResponseEntity.ok(hrJobService.search(userId, c, pageable));
     }
 }

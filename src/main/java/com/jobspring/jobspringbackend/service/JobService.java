@@ -184,9 +184,10 @@ public class JobService {
 
     // HR 查看本公司岗位（包含上下线）
     public Page<JobResponse> listJobs(Long companyId, Integer status, Pageable pageable) {
-        return jobRepository.findAll(pageable)
-                .map(this::toResponse)
-                .map(r -> r);
+        Page<Job> page = (status == null)
+                ? jobRepository.findByCompanyId(companyId, pageable)
+                : jobRepository.findByCompanyIdAndStatus(companyId, status, pageable);
+        return page.map(this::toResponse);
     }
 
     // 根据 userId 找到 HR 所属的公司

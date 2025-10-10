@@ -7,7 +7,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "users")
+@Table(name = "users",
+        indexes = {
+                @Index(name = "idx_users_company_id", columnList = "company_id")
+        })
 public class User {
 
     @Id
@@ -34,4 +37,10 @@ public class User {
 
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, optional = true)
     private Profile profile;
+
+    // 新增：归属公司（可空；通常 HR 应该有值）
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id",
+            foreignKey = @ForeignKey(name = "fk_users_company"))
+    private Company company;
 }

@@ -1,9 +1,6 @@
 package com.jobspring.jobspringbackend.controller;
 
-import com.jobspring.jobspringbackend.dto.ApplicationBriefResponse;
-import com.jobspring.jobspringbackend.dto.JobDTO;
-import com.jobspring.jobspringbackend.dto.NoteDTO;
-import com.jobspring.jobspringbackend.dto.ReviewDTO;
+import com.jobspring.jobspringbackend.dto.*;
 import com.jobspring.jobspringbackend.entity.Job;
 import com.jobspring.jobspringbackend.entity.Review;
 import com.jobspring.jobspringbackend.service.AdminService;
@@ -15,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +21,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,11 +131,33 @@ public class AdminController {
         return ResponseEntity.ok(review);
     }
 
-    //将某用户角色设置为 HR（1）
+    // 升 HR（可选绑定公司），返回 204
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{userId}/make-hr")
-    public ResponseEntity<Void> makeHr(@PathVariable Long userId) {
-        adminService.makeHr(userId);
+    public ResponseEntity<Void> makeHr(@PathVariable Long userId,
+                                       @RequestBody(required = false) PromoteToHrRequest req) {
+        adminService.makeHr(userId, req);
         return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/jobs")
+    public ResponseEntity<Page<JobSearchResponse>> search(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) Long companyId,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) Integer employmentType,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime postedFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime postedTo,
+            @RequestParam(required = false) BigDecimal salaryMin,
+            @RequestParam(required = false) BigDecimal salaryMax,
+            @RequestParam(required = false) String keyword,
+            Pageable pageable
+    ) {
+        var c = new com.jobspring.jobspringbackend.dto.JobSearchCriteria(
+                title, status, companyId, location, employmentType, postedFrom, postedTo, salaryMin, salaryMax, keyword
+        );
+        return ResponseEntity.ok(adminService.search(c, pageable));
     }
 }
