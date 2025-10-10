@@ -12,4 +12,5 @@ public record HrJobResponse(
         BigDecimal salaryMax,
         Integer status,
         LocalDateTime postedAt
-) {}
+) {
+}

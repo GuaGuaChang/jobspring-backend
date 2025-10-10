@@ -17,4 +17,5 @@ public record HrJobSearchCriteria(
         BigDecimal salaryMin,
         BigDecimal salaryMax,
         String keyword
-) {}
+) {
+}
