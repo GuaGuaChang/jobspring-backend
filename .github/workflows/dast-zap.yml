@@ -17,7 +17,7 @@ jobs:
           cmd_options: "-a"
           fail_action: false
           allow_issue_writing: false
-          artifact_name: zap-frontend-${{ github.run_id }}
+          upload_artifact: false
 
       - name: Upload ZAP Frontend Report
         uses: actions/upload-artifact@v4
