@@ -18,6 +18,7 @@ jobs:
       IMAGE_NAME: api
       IMAGE_TAG: ${{ github.sha }}
       IMAGE_URI: asia-southeast1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/jobspring-repo/api:${{ github.sha }}
+      IMAGE_LATEST: asia-southeast1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/jobspring-repo/api:latest
 
     steps:
       - uses: actions/checkout@v4
