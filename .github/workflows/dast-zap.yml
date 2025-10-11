@@ -17,11 +17,12 @@ jobs:
           cmd_options: "-a"
           fail_action: false
           allow_issue_writing: false
+          artifact_name: zap-frontend-${{ github.run_id }}
 
       - name: Upload ZAP Frontend Report
         uses: actions/upload-artifact@v4
         with:
-          name: zap-frontend-report-${{ github.job }}
+          name: zap-frontend-report-${{ github.run_id }}-${{ github.job }}
           path: |
             report_html.html
             zap_scan.log
@@ -75,7 +76,7 @@ jobs:
       - name: Upload ZAP API Report
         uses: actions/upload-artifact@v4
         with:
-          name: zap-api-report
+          name: zap-api-report-${{ github.run_id }}-${{ github.job }}
           path: |
             report_html.html
             zap_scan.log
