@@ -60,5 +60,5 @@ jobs:
             --set-env-vars=SPRING_PROFILES_ACTIVE=prod \
             --set-env-vars=CLOUD_SQL_CONNECTION_NAME=${{ secrets.CLOUD_SQL_CONN }} \
             --set-env-vars=CORS_ALLOW_ORIGINS=${{ secrets.CORS_ALLOW_ORIGINS }} \
-            --set-secrets=DB_USER=${{ secrets.DB_USER_SECRET }}:latest,DB_PASS=${{ secrets.DB_PASS_SECRET }}:latest \
+            --set-secrets=DB_USER=${{ secrets.DB_USER_SECRET }}:latest,DB_PASS=${{ secrets.DB_PASS_SECRET }}:latest,MAIL_USERNAME=MAIL_USERNAME:latest,MAIL_PASSWORD=MAIL_PASSWORD:latest,MAIL_FROM=MAIL_FROM:latest \
             --memory=512Mi --cpu=1 --concurrency=80 --min-instances=0
