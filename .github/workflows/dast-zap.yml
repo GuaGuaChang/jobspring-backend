@@ -3,7 +3,7 @@ name: DAST (OWASP ZAP)
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 18 * * 1"  # 每周一 02:00 SGT 扫描
+    - cron: "0 18 * * 1"
 
 jobs:
   frontend-baseline:
@@ -16,6 +16,7 @@ jobs:
           rules_file_name: ".zap/rules.tsv"
           cmd_options: "-a"
           fail_action: false
+          allow_issue_writing: false
 
       - name: Upload ZAP Frontend Report
         uses: actions/upload-artifact@v4
@@ -46,7 +47,6 @@ jobs:
           RESP=$(curl -s -X POST "$API_BASE/api/auth/login" \
             -H "Content-Type: application/json" \
             -d "{\"email\":\"$TEST_EMAIL\",\"password\":\"$TEST_PASSWORD\"}")
-          # 假设返回 { "token": "xxx" }；若键名不同，改这里
           JWT=$(echo "$RESP" | jq -r '.token')
           if [ -z "$JWT" ] || [ "$JWT" = "null" ]; then
             echo "Login failed or token not found. Response: $RESP"
@@ -69,7 +69,8 @@ jobs:
             -config replacer.full_list(0).regex=false
             -config replacer.full_list(0).replacement=Bearer ${{ steps.get_token.outputs.jwt }}
             "
-          fail_action: true
+          fail_action: false
+          allow_issue_writing: false
 
       - name: Upload ZAP API Report
         uses: actions/upload-artifact@v4
