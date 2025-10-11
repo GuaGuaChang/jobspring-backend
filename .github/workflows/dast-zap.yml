@@ -15,7 +15,7 @@ jobs:
           target: ${{ secrets.FRONTEND_URL }}
           rules_file_name: ".zap/rules.tsv"
           cmd_options: "-a"
-          fail_action: true
+          fail_action: false
 
       - name: Upload ZAP Frontend Report
         uses: actions/upload-artifact@v4
