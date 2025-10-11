@@ -200,6 +200,8 @@ public class JobService {
         return page.map(this::toResponse);
     }
 
+
+
     // 根据 userId 找到 HR 所属的公司
     public Long findCompanyIdByUserId(Long userId) {
         return companyMemberRepository.findFirstByUserIdAndRole(userId, "HR")
