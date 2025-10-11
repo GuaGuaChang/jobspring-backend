@@ -10,6 +10,12 @@ import com.jobspring.jobspringbackend.entity.User;
 import com.jobspring.jobspringbackend.repository.*;
 import com.jobspring.jobspringbackend.exception.BizException;
 import com.jobspring.jobspringbackend.exception.ErrorCode;
+import com.jobspring.jobspringbackend.repository.CompanyRepository;
+
+import com.jobspring.jobspringbackend.repository.JobRepository;
+import com.jobspring.jobspringbackend.repository.SkillRepository;
+import com.jobspring.jobspringbackend.repository.UserRepository;
+import com.jobspring.jobspringbackend.repository.spec.UserSpecs;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -271,14 +277,17 @@ public class AdminService {
         return null;
     }
 
-    public Page<UserDTO> searchUsers(String email, String fullName, String phone, Long id, Pageable pageable) {
-        String emailParam = (email != null && !email.isBlank()) ? email : null;
-        String fullNameParam = (fullName != null && !fullName.isBlank()) ? fullName : null;
-        String phoneParam = (phone != null && !phone.isBlank()) ? phone : null;
+    public Page<UserDTO> searchUsers(String q, Pageable pageable) {
+        // 允许 q 为空：返回全部
+        if (q == null || q.isBlank()) {
+            return userRepository.findAll(pageable).map(this::toDTO);
+        }
+        String norm = q.trim();
 
-        Page<User> users = userRepository.searchUsers(emailParam, fullNameParam, phoneParam, id, pageable);
-        return users.map(this::toDTO);
+        Page<User> page = userRepository.findAll(UserSpecs.fuzzySearch(norm), pageable);
+        return page.map(this::toDTO);
     }
+
 
     private UserDTO toDTO(User user) {
         UserDTO dto = new UserDTO();
