@@ -45,6 +45,7 @@ jobs:
         run: |
           docker build -t "$IMAGE_URI" .
           docker push "$IMAGE_URI"
+          docker push "$IMAGE_LATEST"
 
       - uses: google-github-actions/setup-gcloud@v2
 
