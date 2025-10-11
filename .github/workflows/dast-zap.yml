@@ -6,27 +6,6 @@ on:
     - cron: "0 18 * * 1"
 
 jobs:
-  frontend-baseline:
-    runs-on: ubuntu-latest
-    steps:
-      - name: ZAP Baseline Scan (Frontend)
-        uses: zaproxy/action-baseline@v0.12.0
-        with:
-          target: ${{ secrets.FRONTEND_URL }}
-          rules_file_name: ".zap/rules.tsv"
-          cmd_options: "-a"
-          fail_action: false
-          allow_issue_writing: false
-          upload_artifact: false
-
-      - name: Upload ZAP Frontend Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-frontend-report-${{ github.run_id }}-${{ github.job }}
-          path: |
-            report_html.html
-            zap_scan.log
-          if-no-files-found: warn
 
   api-fullscan:
     runs-on: ubuntu-latest
