@@ -4,15 +4,14 @@ package com.jobspring.jobspringbackend.service;
 import com.jobspring.jobspringbackend.dto.*;
 import com.jobspring.jobspringbackend.entity.Company;
 
+import com.jobspring.jobspringbackend.entity.CompanyMember;
 import com.jobspring.jobspringbackend.entity.Job;
 import com.jobspring.jobspringbackend.entity.User;
-import com.jobspring.jobspringbackend.repository.CompanyRepository;
+import com.jobspring.jobspringbackend.repository.*;
 import com.jobspring.jobspringbackend.exception.BizException;
 import com.jobspring.jobspringbackend.exception.ErrorCode;
-import com.jobspring.jobspringbackend.repository.JobRepository;
-import com.jobspring.jobspringbackend.repository.SkillRepository;
-import com.jobspring.jobspringbackend.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -31,18 +30,18 @@ import java.util.Arrays;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class AdminService {
-    @Autowired
-    private JobRepository jobRepository;
 
-    @Autowired
-    private SkillRepository skillRepository;
+    private final JobRepository jobRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final SkillRepository skillRepository;
 
-    @Autowired
-    private CompanyRepository companyRepository;
+    private final UserRepository userRepository;
+
+    private final CompanyRepository companyRepository;
+
+    private final CompanyMemberRepository companyMemberRepository;
 
     private static final int ROLE_CANDIDATE = 0;
     private static final int ROLE_HR = 1;
@@ -93,6 +92,7 @@ public class AdminService {
 
     @Transactional
     public void makeHr(Long userId, PromoteToHrRequest req) {
+
         User u = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
@@ -102,24 +102,58 @@ public class AdminService {
         if (u.getRole() == ROLE_ADMIN) {
             throw new IllegalArgumentException("Cannot change role of ADMIN");
         }
-        if (u.getRole() != ROLE_HR && u.getRole() != ROLE_CANDIDATE) {
+        if (u.getRole() != ROLE_HR && u.getRole() != ROLE_CANDIDATE ) {
             throw new IllegalArgumentException("Only candidate can be promoted to HR");
         }
 
-        // 幂等升 HR
+        // 1) 幂等升 HR（即使已经是 HR 再调也不会报错）
         u.setRole(ROLE_HR);
 
-        // 可选：绑定/覆盖公司
+        // 2) 计算要绑定的公司（优先 req.companyId；否则用用户已有的 company）
+        Company targetCompany = null;
+        boolean overwrite = req == null || req.getOverwriteCompany() == null || req.getOverwriteCompany();
+
         if (req != null && req.getCompanyId() != null) {
-            boolean overwrite = req.getOverwriteCompany() == null || req.getOverwriteCompany();
+            targetCompany = companyRepository.findById(req.getCompanyId())
+                    .orElseThrow(() -> new EntityNotFoundException("Company not found"));
             if (u.getCompany() == null || overwrite) {
-                Company c = companyRepository.findById(req.getCompanyId())
-                        .orElseThrow(() -> new EntityNotFoundException("Company not found"));
-                u.setCompany(c);
+                u.setCompany(targetCompany); // 同步 User 上的公司
             }
+        } else if (u.getCompany() != null) {
+            targetCompany = u.getCompany();
         }
 
+        // 3) 写入/更新 company_members（幂等 upsert）
+        if (targetCompany != null) {
+            upsertHrMembership(u, targetCompany, overwrite);
+        }
+        // 如果 targetCompany 仍然为空，就只把角色变成 HR，不创建成员记录（看你的业务是否允许）
+
         userRepository.save(u);
+    }
+
+    private void upsertHrMembership(User user, Company company, boolean overwrite) {
+        // 查是否已有 HR 成员记录
+        CompanyMember cm = companyMemberRepository
+                .findFirstByUserIdAndRole(user.getId(), "HR")
+                .orElse(null);
+
+        if (cm == null) {
+            // 没有则创建
+            cm = new CompanyMember();
+            cm.setUser(user);
+            cm.setCompany(company);
+            cm.setRole("HR");
+            companyMemberRepository.save(cm);
+        } else {
+            // 已存在成员记录
+            if (overwrite && !cm.getCompany().getId().equals(company.getId())) {
+                // 允许覆盖，并且公司不同 -> 更新到新公司
+                cm.setCompany(company);
+                companyMemberRepository.save(cm);
+            }
+            // 否则保持原公司，不做改变（幂等）
+        }
     }
 
     @Transactional(readOnly = true)

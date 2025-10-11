@@ -2,8 +2,11 @@ package com.jobspring.jobspringbackend.service;
 
 import com.jobspring.jobspringbackend.dto.HrJobResponse;
 import com.jobspring.jobspringbackend.dto.HrJobSearchCriteria;
+import com.jobspring.jobspringbackend.dto.JobResponse;
 import com.jobspring.jobspringbackend.entity.Job;
 import com.jobspring.jobspringbackend.entity.User;
+import com.jobspring.jobspringbackend.exception.NotFoundException;
+import com.jobspring.jobspringbackend.repository.CompanyMemberRepository;
 import com.jobspring.jobspringbackend.repository.JobRepository;
 import com.jobspring.jobspringbackend.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -16,6 +19,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.server.ResponseStatusException;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+
+
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -30,7 +37,10 @@ import java.util.List;
 public class HrJobService {
 
     private final JobRepository jobRepository;
+
     private final UserRepository userRepository;
+
+    private final CompanyMemberRepository companyMemberRepository;
 
     @Transactional(readOnly = true)
     public Page<HrJobResponse> search(Long hrUserId, String q, Pageable pageable) {
@@ -141,5 +151,32 @@ public class HrJobService {
         } catch (DateTimeParseException ignore) {
         }
         return null;
+    }
+
+    //供编辑页使用：拿到完整的 Job 详情（并校验属于当前 HR 的公司）
+
+    public JobResponse getJobForEdit(Long companyId, Long jobId) {
+        Job job = jobRepository.findByIdAndCompanyId(jobId, companyId)
+                .orElseThrow(() -> new NotFoundException("Job not found or not under your company"));
+
+
+        // 映射到 DTO（也可以用 MapStruct）
+        JobResponse r = new JobResponse();
+        r.setId(job.getId());
+        r.setCompanyId(job.getCompany().getId()); // 或 job.getCompanyId()
+        r.setTitle(job.getTitle());
+        r.setEmploymentType(job.getEmploymentType());
+        r.setSalaryMin(job.getSalaryMin());
+        r.setSalaryMax(job.getSalaryMax());
+        r.setLocation(job.getLocation());
+        r.setDescription(job.getDescription());
+        r.setStatus(job.getStatus());
+        r.setPostedAt(job.getPostedAt());
+        return r;
+    }
+
+    public Long findCompanyIdByUserId(Long userId) {
+        return companyMemberRepository.findCompanyIdByHrUserId(userId)
+                .orElseThrow(() -> new NotFoundException("HR is not bound to any company"));
     }
 }
