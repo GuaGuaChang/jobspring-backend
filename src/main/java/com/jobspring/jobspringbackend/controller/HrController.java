@@ -1,6 +1,7 @@
 package com.jobspring.jobspringbackend.controller;
 
 import com.jobspring.jobspringbackend.dto.ApplicationBriefResponse;
+import com.jobspring.jobspringbackend.dto.JobResponse;
 import com.jobspring.jobspringbackend.service.HrApplicationService;
 import com.jobspring.jobspringbackend.service.HrCompanyService;
 import com.jobspring.jobspringbackend.service.HrJobService;
@@ -112,5 +113,15 @@ public class HrController {
     ) {
         Long userId = Long.valueOf(auth.getName());
         return ResponseEntity.ok(hrJobService.search(userId, q, pageable));
+    }
+
+    //HR 查看“可编辑”的职位详情（用于编辑页回填）只允许查看本公司职位
+    @PreAuthorize("hasRole('HR')")
+    @GetMapping("/jobs-detail/{jobId}")
+    public ResponseEntity<JobResponse> getJobDetailForEdit(@PathVariable Long jobId,
+                                                           Authentication auth) {
+        Long userId = Long.valueOf(auth.getName());
+        Long companyId = hrJobService.findCompanyIdByUserId(userId);
+        return ResponseEntity.ok(hrJobService.getJobForEdit(companyId, jobId));
     }
 }
