@@ -7,7 +7,8 @@ import jakarta.persistence.criteria.Predicate;
 
 public final class UserSpecs {
 
-    private UserSpecs() {}
+    private UserSpecs() {
+    }
 
     public static Specification<User> fuzzySearch(String raw) {
         return (root, query, cb) -> {
@@ -16,7 +17,7 @@ public final class UserSpecs {
 
             // email 和 fullName 做不区分大小写的 like
             var emailLike = cb.like(cb.lower(root.get("email")), pattern, '\\');
-            var nameLike  = cb.like(cb.lower(root.get("fullName")), pattern, '\\');
+            var nameLike = cb.like(cb.lower(root.get("fullName")), pattern, '\\');
 
             // id 支持两种：1) 可解析为 Long 时，等值匹配  2) 同时提供“按字符串模糊”能力
             Predicate idPredicate;
