@@ -21,7 +21,7 @@ jobs:
       - name: Upload ZAP Frontend Report
         uses: actions/upload-artifact@v4
         with:
-          name: zap-frontend-report
+          name: zap-frontend-report-${{ github.job }}
           path: |
             report_html.html
             zap_scan.log
