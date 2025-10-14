@@ -21,7 +21,7 @@ public class ApplicationSubmittedListener {
 
     private final CompanyMemberRepository companyMembers;
     private final MailService mail;
-    @Value("${app.web.base-url}")
+    @Value("${app.web.base-url:http://localhost:5173}")
     private String webBaseUrl;
 
     @Async
