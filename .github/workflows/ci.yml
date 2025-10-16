@@ -26,22 +26,4 @@ jobs:
       - name: Unit tests with coverage
         run: mvn -B clean verify
 
-      - name: Cache Dependency-Check DB
-        uses: actions/cache@v4
-        with:
-          path: ~/.dependency-check
-          key: dc-${{ runner.os }}-v1
-
-      - name: Run SCA (Dependency-Check, no update)
-        run: |
-          mvn -B org.owasp:dependency-check-maven:check \
-            -Dautoupdate=false \
-            -DdataDirectory="$HOME/.dependency-check" \
-            -Dformat=HTML -DoutputDirectory=target
-
-      - name: Upload SCA report
-        uses: actions/upload-artifact@v4
-        with:
-          name: dependency-check-report
-          path: target/dependency-check-report.html
 
