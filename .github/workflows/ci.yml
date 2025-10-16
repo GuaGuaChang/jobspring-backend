@@ -26,4 +26,12 @@ jobs:
       - name: Unit tests with coverage
         run: mvn -B clean verify
 
+      - name: Assert NVD key present
+        env: { NVD_API_KEY: ${ { secrets.NVD_API_KEY } } }
+        run: |
+          if [ -z "$NVD_API_KEY" ]; then
+            echo "NVD_API_KEY is EMPTY in this job"; exit 1
+          else
+            echo "NVD_API_KEY is PRESENT"
+          fi
 
