@@ -1,0 +1,32 @@
+name: SCA Warmup (NVD DB Update)
+
+on:
+  schedule:
+    - cron: '0 18 * * 1'
+  workflow_dispatch:
+
+jobs:
+  warmup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Cache Dependency-Check DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.dependency-check
+          key: dc-${{ runner.os }}-v1
+
+      - name: Update NVD database
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          mvn -B org.owasp:dependency-check-maven:update-only \
+            -Dnvd.api.key="$NVD_API_KEY" \
+            -DdataDirectory="$HOME/.dependency-check"
