@@ -1,0 +1,44 @@
+name: SCA - OWASP Dependency Check
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 18 * * 1'
+
+jobs:
+  sca:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Cache Dependency-Check DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.dependency-check
+          key: dc-${{ runner.os }}-v1
+
+      - name: Run OWASP Dependency Check
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          rm -rf "$HOME/.dependency-check"   
+          mvn -B org.owasp:dependency-check-maven:check \
+            -Dnvd.api.key="$NVD_API_KEY" \
+            -DdataDirectory="$HOME/.dependency-check" \
+            -Dformat=HTML -DoutputDirectory=target \
+            -DfailOnError=false
+
+      - name: Upload SCA report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: target/dependency-check-report.html
