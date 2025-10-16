@@ -26,3 +26,13 @@ jobs:
       - name: Unit tests with coverage
         run: mvn -B clean verify
 
+      - name: SCA (OWASP Dependency-Check)
+        run: mvn -B org.owasp:dependency-check-maven:check -Dformat=HTML -DoutputDirectory=target
+
+      - name: Upload SCA report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: target/dependency-check-report.html
+          if-no-files-found: error
+
