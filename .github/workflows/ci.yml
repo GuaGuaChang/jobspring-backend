@@ -26,6 +26,9 @@ jobs:
       - name: Unit tests with coverage
         run: mvn -B clean verify
 
+      - name: Purge bad cache if exists
+        run: rm -rf "$HOME/.dependency-check"
+
       - name: Cache Dependency-Check DB
         uses: actions/cache@v4
         with:
@@ -40,10 +43,4 @@ jobs:
             -Dnvd.api.key="$NVD_API_KEY" \
             -DdataDirectory="$HOME/.dependency-check" \
             -Dformat=HTML -DoutputDirectory=target
-
-      - name: Upload SCA report
-        uses: actions/upload-artifact@v4
-        with:
-          name: dependency-check-report
-          path: target/dependency-check-report.html
 
