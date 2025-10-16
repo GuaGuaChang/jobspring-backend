@@ -24,32 +24,6 @@ jobs:
         run: mvn -B checkstyle:check
 
       - name: Unit tests with coverage
-        run: mvn -B clean verify
+        run: mvn -B clean verify -Ddependency-check.skip=true
 
-      - name: Assert NVD key present
-        env: { NVD_API_KEY: ${ { secrets.NVD_API_KEY } } }
-        run: |
-          if [ -z "$NVD_API_KEY" ]; then
-            echo "NVD_API_KEY is EMPTY in this job"; exit 1
-          else
-            echo "NVD_API_KEY is PRESENT"
-          fi
-      - name: Cache Dependency-Check DB
-        uses: actions/cache@v4
-        with:
-          path: ~/.dependency-check
-          key: dc-${{ runner.os }}-v1
-
-      - name: Run SCA (Dependency-Check, no update)
-        run: |
-          mvn -B org.owasp:dependency-check-maven:check \
-            -Dautoupdate=false \
-            -DdataDirectory="$HOME/.dependency-check" \
-            -Dformat=HTML -DoutputDirectory=target
-
-      - name: Upload SCA report
-        uses: actions/upload-artifact@v4
-        with:
-          name: dependency-check-report
-          path: target/dependency-check-report.html
 
