@@ -30,23 +30,15 @@ public class ApplicationController {
         return ResponseEntity.created(URI.create("/api/applications/" + id)).build();
     }
 
-    // 查看单个申请详情
-    @PreAuthorize("hasAnyRole('HR','ADMIN')")
+
+    @PreAuthorize("hasAnyRole('HR')")
     @GetMapping("/{applicationId}")
     public ResponseEntity<ApplicationDetailResponse> getApplicationDetail(
             @PathVariable Long applicationId,
-            @RequestParam(required = false) Long companyId,
             org.springframework.security.core.Authentication auth
     ) {
-        // 如果你把“用户ID”放进了 auth.getName()（比如之前用 "200" 这种），可直接解析：
         Long userId = Long.valueOf(auth.getName());
-
-      /*  // 如果 auth.getName() 存的是邮箱/用户名，就查一次用户拿到 id：
-        var user = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new IllegalStateException("User not found"));
-        Long userId = user.getId();*/
-
-        var resp = applicationService.getApplicationDetail(userId, companyId, applicationId);
+        ApplicationDetailResponse resp = applicationService.getApplicationDetailForCompanyMember(userId, applicationId);
         return ResponseEntity.ok(resp);
     }
 }
