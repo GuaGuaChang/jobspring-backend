@@ -6,6 +6,7 @@ import com.jobspring.jobspringbackend.entity.Application;
 import com.jobspring.jobspringbackend.entity.Job;
 import com.jobspring.jobspringbackend.entity.User;
 import com.jobspring.jobspringbackend.repository.ApplicationRepository;
+import com.jobspring.jobspringbackend.repository.CompanyMemberRepository;
 import com.jobspring.jobspringbackend.repository.JobRepository;
 import com.jobspring.jobspringbackend.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -41,6 +42,7 @@ public class ApplicationService {
     private String publicBase;       // 对外 URL 前缀（由静态资源映射或 Nginx 提供）
 
     private final ApplicationRepository applicationRepository;
+    private final CompanyMemberRepository memberRepo;
     private final HrCompanyService hrCompanyService;
     private final UserRepository userRepository;
 
@@ -175,37 +177,29 @@ public class ApplicationService {
         }
     }
 
-    public ApplicationDetailResponse getApplicationDetail(Long hrUserId, Long companyId, Long applicationId) {
-        // 推断或校验公司 ID
-        Long effectiveCompanyId = (companyId == null)
-                ? hrCompanyService.findCompanyIdByUserId(hrUserId)
-                : validateAndReturn(hrUserId, companyId);
+    public ApplicationDetailResponse getApplicationDetailForCompanyMember(Long userId, Long applicationId) {
 
-        Application app = applicationRepository.findById(applicationId)
+        Application app = applicationRepository.findByIdWithJobAndCompany(applicationId)
                 .orElseThrow(() -> new EntityNotFoundException("Application not found"));
 
-        // 校验这份申请属于该 HR 的公司
         Long jobCompanyId = app.getJob().getCompany().getId();
-        if (!jobCompanyId.equals(effectiveCompanyId)) {
-            throw new SecurityException("You are not allowed to access this application");
+
+        Long userCompanyId = findCompanyIdForUser(userId);
+
+        if (!jobCompanyId.equals(userCompanyId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Application does not belong to your company");
         }
+
 
         return toDetail(app);
     }
 
-    private Long validateAndReturn(Long userId, Long companyId) {
-        // 查询用户角色
-        var user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalStateException("User not found"));
 
-        // 如果是 Admin，则直接返回，不做 HR 公司归属校验
-        if (user.getRole() == 2) {  // 2 = Admin
-            return companyId;
-        }
-
-        // 否则正常 HR 校验
-        hrCompanyService.assertHrInCompany(userId, companyId);
-        return companyId;
+    private Long findCompanyIdForUser(Long userId) {
+        return memberRepo.findCompanyIdByHrUserId(userId)
+                .orElseThrow(() -> new org.springframework.security.access.AccessDeniedException(
+                        "Not HR or no company bound."));
     }
 
     private ApplicationDetailResponse toDetail(Application a) {

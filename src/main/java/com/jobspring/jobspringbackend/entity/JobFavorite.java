@@ -17,8 +17,8 @@ public class JobFavorite {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @ManyToOne(optional = false)
 
+    @ManyToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
