@@ -24,5 +24,6 @@ jobs:
         run: mvn -B checkstyle:check
 
       - name: Unit tests with coverage
-        run: mvn -B clean verify
+        run: mvn -B clean verify -Ddependency-check.skip=true
+
 

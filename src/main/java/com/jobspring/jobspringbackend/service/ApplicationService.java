@@ -5,6 +5,7 @@ import com.jobspring.jobspringbackend.dto.ApplicationDetailResponse;
 import com.jobspring.jobspringbackend.entity.Application;
 import com.jobspring.jobspringbackend.entity.Job;
 import com.jobspring.jobspringbackend.entity.User;
+import com.jobspring.jobspringbackend.events.ApplicationSubmittedEvent;
 import com.jobspring.jobspringbackend.repository.ApplicationRepository;
 import com.jobspring.jobspringbackend.repository.CompanyMemberRepository;
 import com.jobspring.jobspringbackend.repository.JobRepository;
@@ -14,6 +15,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,6 +47,8 @@ public class ApplicationService {
     private final CompanyMemberRepository memberRepo;
     private final HrCompanyService hrCompanyService;
     private final UserRepository userRepository;
+
+    private final ApplicationEventPublisher publisher;
 
     @Transactional
     public Long apply(Long jobId, Long userId, ApplicationDTO form, MultipartFile file) {
@@ -117,7 +121,7 @@ public class ApplicationService {
         } else {
             // 2.2 其次：表单文件 → base64 data URL
             if (file != null && !file.isEmpty()) {
-                validateFile(file); // 你已有：大小/类型校验
+                validateFile(file);
                 try {
                     String ct = Optional.ofNullable(file.getContentType())
                             .filter(s -> !s.isBlank())
@@ -128,7 +132,7 @@ public class ApplicationService {
                     throw new IllegalStateException("Failed to read file", e);
                 }
             }
-            // 如果你的 Application.profile 非必填，可以不设；必填则根据业务决定如何处理
+
             if (user.getProfile() != null) {
                 app.setProfile(user.getProfile());
             }
@@ -140,32 +144,20 @@ public class ApplicationService {
         }
 
         app.setResumeUrl(resumeUrlToSave);
+        var saved = appRepo.save(app);
 
-        // 3) 保存
-        appRepo.save(app);
+        publisher.publishEvent(new ApplicationSubmittedEvent(
+                saved.getId(),
+                job.getId(),
+                job.getCompany().getId(),
+                job.getTitle(),
+                user.getId(),
+                user.getFullName(),
+                user.getEmail()
+        ));
+
         return app.getId();
     }
-
-   /* private String saveToLocal(MultipartFile file, String keyPrefix) {
-        try {
-            String safePrefix = keyPrefix.replaceAll("[^a-zA-Z0-9/_-]", "_");
-            String filename = System.currentTimeMillis() + "_" +
-                    (file.getOriginalFilename() == null ? "file"
-                            : java.nio.file.Path.of(file.getOriginalFilename()).getFileName().toString());
-
-            java.nio.file.Path root = java.nio.file.Paths.get(uploadDir, safePrefix).normalize();
-            java.nio.file.Files.createDirectories(root);
-            java.nio.file.Path target = root.resolve(filename).normalize();
-
-            file.transferTo(target);
-
-            String urlPath = String.join("/", publicBase.replaceAll("/+$", ""),
-                    safePrefix.replaceAll("^/+", "").replaceAll("/+$", ""), filename);
-            return urlPath.startsWith("/") ? urlPath : "/" + urlPath;
-        } catch (java.io.IOException e) {
-            throw new IllegalStateException("File upload failed", e); // 运行时异常
-        }
-    }*/
 
     private void validateFile(MultipartFile f) {
         if (f.getSize() > 10 * 1024 * 1024) throw new IllegalArgumentException("File too large");
