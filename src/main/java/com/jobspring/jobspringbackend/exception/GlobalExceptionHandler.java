@@ -25,7 +25,6 @@ public class GlobalExceptionHandler {
         return build(ex.getErrorCode(), ex.getMessage(), req, null);
     }
 
-    // ---- Bean Validation on @RequestBody DTO ----
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
     public ResponseEntity<ApiError> handleValidation(Exception ex, HttpServletRequest req) {
         List<Map<String, Object>> errors;
