@@ -12,9 +12,6 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        svc: [ auth-service, company-service, job-service, application-service, gateway-service ]
     steps:
       - uses: actions/checkout@v4
 
@@ -30,16 +27,11 @@ jobs:
           key: m2-${{ hashFiles('**/pom.xml') }}
 
       - name: Test + Coverage
-        working-directory: ${{ matrix.svc }}
-        run: mvn -B -DskipTests=false clean verify
+        run: mvn -B clean verify
 
       - name: SonarCloud Scan
-        working-directory: ${{ matrix.svc }}
         run: |
           mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
-            -Dsonar.organization=${{ secrets.SONAR_ORG }} \
-            -Dsonar.projectKey=jobspring-${{ matrix.svc }} \
-            -Dsonar.projectName=${{ matrix.svc }} \
-            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+            -Dsonar.organization=${{ secrets.SONAR_ORG }}
