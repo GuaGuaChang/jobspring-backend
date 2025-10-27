@@ -4,7 +4,6 @@ import com.jobspring.jobspringbackend.dto.*;
 
 import com.jobspring.jobspringbackend.entity.Job;
 import com.jobspring.jobspringbackend.service.*;
-import com.jobspring.jobspringbackend.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
