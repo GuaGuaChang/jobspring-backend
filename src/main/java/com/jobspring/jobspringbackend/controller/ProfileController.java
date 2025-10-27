@@ -4,7 +4,6 @@ package com.jobspring.jobspringbackend.controller;
 import com.jobspring.jobspringbackend.dto.ProfileRequestDTO;
 import com.jobspring.jobspringbackend.dto.ProfileResponseDTO;
 import com.jobspring.jobspringbackend.dto.ProfileUpdateResponseDTO;
-import com.jobspring.jobspringbackend.entity.User;
 import com.jobspring.jobspringbackend.repository.UserRepository;
 import com.jobspring.jobspringbackend.service.ProfileService;
 import org.springframework.beans.factory.annotation.Autowired;
