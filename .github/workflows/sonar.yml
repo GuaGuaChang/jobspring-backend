@@ -37,5 +37,4 @@ jobs:
             -Dsonar.organization=${{ secrets.SONAR_ORG }} \
             -Dsonar.projectKey=jobspring-backend \
             -Dsonar.projectName=jobspring-backend \
-            -Dsonar.branch.name=${{ github.ref_name }} \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
