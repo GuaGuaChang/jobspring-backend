@@ -35,5 +35,5 @@ jobs:
             -Dsonar.organization=${{ secrets.SONAR_ORG }} \
             -Dsonar.projectKey=jobspring-backend \
             -Dsonar.projectName=jobspring-backend \
-            -Dsonar.qualitygate.wait=false
+            -Dsonar.qualitygate.wait=false \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
