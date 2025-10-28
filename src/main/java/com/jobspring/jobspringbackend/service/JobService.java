@@ -24,14 +24,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JobService {
 
-    @Autowired
-    private JobRepository jobRepository;
 
-    @Autowired
-    private SkillRepository skillRepository;
+    private final JobRepository jobRepository;
 
-    @Autowired
-    private CompanyMemberRepository companyMemberRepository;
+
+    private final SkillRepository skillRepository;
+
+
+    private final CompanyMemberRepository companyMemberRepository;
 
 //    @Autowired
 //    private ApplicationRepository applicationRepository;
