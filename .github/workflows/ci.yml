@@ -26,4 +26,16 @@ jobs:
       - name: Unit tests with coverage
         run: mvn -B clean verify -Ddependency-check.skip=true
 
+      - name: Upload JaCoCo HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-html
+          path: target/site/jacoco/**
+
+      - name: Upload JaCoCo XML
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-xml
+          path: target/jacoco.xml
+
 
