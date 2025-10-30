@@ -32,12 +32,17 @@ jobs:
             -Danalyzer.nvd.json.enabled=false \
             -Danalyzer.nvd.api.enabled=false \
             -Dautoupdate=false \
+            -Dformats=HTML \
+            -DoutputDirectory=target/dependency-check-report \
             -DdataDirectory="$HOME/.dependency-check" \
-            -Dformat=HTML -DoutputDirectory=target \
             -DfailOnError=false
+
+      - name: List report directory (debug)
+        run: ls -R target || true
 
       - name: Upload SCA report
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report
-          path: target/dependency-check-report.html
+          path: target/dependency-check-report/dependency-check-report.html
+          if-no-files-found: warn
