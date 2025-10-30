@@ -2,7 +2,7 @@ name: SCA - OWASP Dependency Check
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ master ]
   workflow_dispatch:
   schedule:
     - cron: '0 18 * * 1'
@@ -30,7 +30,6 @@ jobs:
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
-          rm -rf "$HOME/.dependency-check"   
           mvn -B org.owasp:dependency-check-maven:check \
             -Dnvd.api.key="$NVD_API_KEY" \
             -DdataDirectory="$HOME/.dependency-check" \
