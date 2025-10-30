@@ -26,18 +26,23 @@ jobs:
           path: ~/.dependency-check
           key: dc-${{ runner.os }}-v1
 
-      - name: Run OWASP Dependency Check (NVD disabled for today)
+      - name: Run OWASP Dependency Check
         run: |
           mvn -B org.owasp:dependency-check-maven:check \
             -Danalyzer.nvd.json.enabled=false \
             -Danalyzer.nvd.api.enabled=false \
             -Dautoupdate=false \
+            -Dformats=HTML \
+            -DoutputDirectory=target/dependency-check-report \
             -DdataDirectory="$HOME/.dependency-check" \
-            -Dformat=HTML -DoutputDirectory=target \
             -DfailOnError=false
+
+      - name: List report directory (debug)
+        run: ls -R target || true
 
       - name: Upload SCA report
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report
-          path: target/dependency-check-report.html
+          path: target/dependency-check-report/dependency-check-report.html
+          if-no-files-found: warn
