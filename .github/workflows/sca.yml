@@ -27,11 +27,11 @@ jobs:
           key: dc-${{ runner.os }}-v1
 
       - name: Run OWASP Dependency Check
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
           mvn -B org.owasp:dependency-check-maven:check \
-            -Danalyzer.nvd.json.enabled=false \
-            -Danalyzer.nvd.api.enabled=false \
-            -Dautoupdate=false \
+            -Dnvd.api.key="$NVD_API_KEY" \
             -DdataDirectory="$HOME/.dependency-check" \
             -Dformat=HTML -DoutputDirectory=target \
             -DfailOnError=false
