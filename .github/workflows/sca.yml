@@ -26,7 +26,7 @@ jobs:
           path: ~/.dependency-check
           key: dc-${{ runner.os }}-v1
 
-      - name: Run OWASP Dependency Check (NVD disabled for today)
+      - name: Run OWASP Dependency Check
         run: |
           mvn -B org.owasp:dependency-check-maven:check \
             -Danalyzer.nvd.json.enabled=false \
