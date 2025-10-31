@@ -2,7 +2,7 @@ name: SCA - OWASP Dependency Check
 
 on:
   push:
-    branches: [ master ]
+    branches: [  "**"  ]
   workflow_dispatch:
   schedule:
     - cron: '0 18 * * 1'
