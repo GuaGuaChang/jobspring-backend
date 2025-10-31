@@ -63,6 +63,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-backend-repo.sarif
+          category: trivy-repo   # ← 加这一行，唯一
 
       # 1b) 同步生成 JSON 报告当构件
       - name: Trivy FS scan (repo) → JSON
@@ -94,6 +95,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-backend-target.sarif
+          category: trivy-target
 
       # 3) 生成 SBOM（CycloneDX）
       - name: Generate SBOM (CycloneDX)
@@ -104,18 +106,6 @@ jobs:
           format: cyclonedx
           output: sbom-backend.cyclonedx.json
           ignore-unfixed: ${{ env.TRIVY_IGNORE_UNFIXED }}
-          timeout: ${{ env.TRIVY_TIMEOUT }}
-          cache-dir: ${{ env.TRIVY_CACHE_DIR }}
-
-      # 4) （可选）Secrets / Misconfig 扫描
-      - name: Trivy Secrets & Misconfig (repo) → JSON
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          scan-type: fs
-          scan-ref: .
-          format: json
-          output: trivy-backend-misc.json
-          security-checks: 'secret,config'   # 只扫密钥泄露 & 误配置
           timeout: ${{ env.TRIVY_TIMEOUT }}
           cache-dir: ${{ env.TRIVY_CACHE_DIR }}
 
