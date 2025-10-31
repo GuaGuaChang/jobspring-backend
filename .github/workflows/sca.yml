@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 18 * * 1'
-
 jobs:
   sca:
     runs-on: ubuntu-latest
