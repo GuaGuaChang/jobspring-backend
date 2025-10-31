@@ -10,7 +10,6 @@ on:
 jobs:
   sca:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -27,40 +26,31 @@ jobs:
           path: ~/.dependency-check
           key: dc-${{ runner.os }}-v1
 
-      # 遍历所有含 pom.xml 的模块逐个执行（单模块也兼容）
-      - name: Run OWASP Dependency Check (each module)
+      # 如果后端在子目录，比如 backend/，把 working-directory 改成 backend
+      - name: Run OWASP Dependency-Check (aggregate)
+        # working-directory: ./backend   # 若后端在子目录，取消注释并改路径
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        shell: bash
         run: |
-          set -euo pipefail
-          mapfile -t MODULES < <(find . -type f -name "pom.xml" -not -path "*/target/*" -printf '%h\n' | sort -u)
-          echo "Detected modules:"
-          printf ' - %s\n' "${MODULES[@]}"
-
-          for m in "${MODULES[@]}"; do
-            echo "=== Running DC in: $m ==="
-            ( cd "$m" && mvn -B org.owasp:dependency-check-maven:check \
-                -Dnvd.api.key="${NVD_API_KEY:-}" \
-                -Dnvd.api.delay=20000 -Dnvd.api.maxRetryCount=10 -Dnvd.api.jitter=5000 \
-                -DdataDirectory="$HOME/.dependency-check" \
-                -Dformat=HTML \
-                -DoutputDirectory=target \
-                -DfailOnError=false )
-          done
+          mvn -B org.owasp:dependency-check-maven:aggregate \
+            -Dnvd.api.key="${NVD_API_KEY:-}" \
+            -Dnvd.api.delay=20000 -Dnvd.api.maxRetryCount=10 -Dnvd.api.jitter=5000 \
+            -DdataDirectory="$HOME/.dependency-check" \
+            -Dformat=ALL \
+            -DoutputDirectory="dc-out" \
+            -DfailOnError=false
 
       - name: Show generated reports (debug)
-        shell: bash
         run: |
-          set -euo pipefail
           echo "[pwd] $(pwd)"
-          echo "Trying to locate generated HTML reports..."
-          find . -type f -path "*/target/dependency-check-report.html" -print || true
+          find . -maxdepth 4 -iname "dependency-check-report.*" -print
 
-      - name: Upload SCA reports (all modules)
+      - name: Upload SCA report (aggregate)
         uses: actions/upload-artifact@v4
         with:
-          name: dependency-check-reports
+          name: dependency-check-report
           path: |
-            **/target/dependency-check-report.html
-          if-no-files-found: warn
+            dc-out/dependency-check-report.html
+            dc-out/dependency-check-report.json
+            dc-out/dependency-check-report.xml
+          if-no-files-found: error
