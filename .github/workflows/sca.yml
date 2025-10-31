@@ -1,15 +1,27 @@
-name: SCA - OWASP Dependency Check
+name: Backend SCA with Trivy
 
 on:
   push:
     branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
   workflow_dispatch:
-  schedule:
-    - cron: '0 18 * * 1'
+
+env:
+  TRIVY_SEVERITY: HIGH,CRITICAL
+  TRIVY_IGNORE_UNFIXED: "true"
+  TRIVY_CACHE_DIR: .trivy-cache
+  TRIVY_TIMEOUT: 5m
 
 jobs:
-  sca:
+  sca_trivy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # 允许上传 SARIF 到 Security
+      actions: read
+      checks: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -19,38 +31,103 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: maven
+        # working-directory: ./backend   # ← 如果后端在子目录，给下面相关步骤也加上
 
-      - name: Cache Dependency-Check DB
+      - name: Build (populate ~/.m2 & target)
+        run: mvn -B -DskipTests package
+        # working-directory: ./backend
+
+      - name: Cache Trivy DB
         uses: actions/cache@v4
         with:
-          path: ~/.dependency-check
-          key: dc-${{ runner.os }}-v1
+          path: ${{ env.TRIVY_CACHE_DIR }}
+          key: trivy-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: trivy-${{ runner.os }}-
 
-      # 如果后端在子目录，比如 backend/，把 working-directory 改成 backend
-      - name: Run OWASP Dependency-Check (aggregate)
-        # working-directory: ./backend   # 若后端在子目录，取消注释并改路径
-        env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        run: |
-          mvn -B org.owasp:dependency-check-maven:aggregate \
-            -Dnvd.api.key="${NVD_API_KEY:-}" \
-            -Dnvd.api.delay=20000 -Dnvd.api.maxRetryCount=10 -Dnvd.api.jitter=5000 \
-            -DdataDirectory="$HOME/.dependency-check" \
-            -Dformat=ALL \
-            -DoutputDirectory="dc-out" \
-            -DfailOnError=false
+      # 1) 扫描仓库（源码/配置/锁定文件等）→ SARIF（上传到 Security）
+      - name: Trivy FS scan (repo) → SARIF
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scan-ref: .                      # 若在子目录，改成 ./backend
+          format: sarif
+          output: trivy-backend-repo.sarif
+          severity: ${{ env.TRIVY_SEVERITY }}
+          ignore-unfixed: ${{ env.TRIVY_IGNORE_UNFIXED }}
+          timeout: ${{ env.TRIVY_TIMEOUT }}
+          cache-dir: ${{ env.TRIVY_CACHE_DIR }}
+          # 可选：减少噪声
+          args: '--skip-dirs target --skip-dirs .git --skip-dirs .mvn'
 
-      - name: Show generated reports (debug)
-        run: |
-          echo "[pwd] $(pwd)"
-          find . -maxdepth 4 -iname "dependency-check-report.*" -print
+      - name: Upload SARIF (repo)
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-backend-repo.sarif
 
-      - name: Upload SCA report (aggregate)
+      # 1b) 同步生成 JSON 报告当构件
+      - name: Trivy FS scan (repo) → JSON
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: json
+          output: trivy-backend-repo.json
+          ignore-unfixed: ${{ env.TRIVY_IGNORE_UNFIXED }}
+          timeout: ${{ env.TRIVY_TIMEOUT }}
+          cache-dir: ${{ env.TRIVY_CACHE_DIR }}
+          args: '--skip-dirs target --skip-dirs .git --skip-dirs .mvn'
+
+      # 2) 扫描构建产物（target 下的 JAR/WAR，覆盖传递依赖）
+      - name: Trivy FS scan (build artifacts) → SARIF
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scan-ref: ./target                # 若子目录：./backend/target
+          format: sarif
+          output: trivy-backend-target.sarif
+          severity: ${{ env.TRIVY_SEVERITY }}
+          ignore-unfixed: ${{ env.TRIVY_IGNORE_UNFIXED }}
+          timeout: ${{ env.TRIVY_TIMEOUT }}
+          cache-dir: ${{ env.TRIVY_CACHE_DIR }}
+
+      - name: Upload SARIF (target)
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-backend-target.sarif
+
+      # 3) 生成 SBOM（CycloneDX）
+      - name: Generate SBOM (CycloneDX)
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scan-ref: ./target                # 或者用 . 扫源码
+          format: cyclonedx
+          output: sbom-backend.cyclonedx.json
+          ignore-unfixed: ${{ env.TRIVY_IGNORE_UNFIXED }}
+          timeout: ${{ env.TRIVY_TIMEOUT }}
+          cache-dir: ${{ env.TRIVY_CACHE_DIR }}
+
+      # 4) （可选）Secrets / Misconfig 扫描
+      - name: Trivy Secrets & Misconfig (repo) → JSON
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: json
+          output: trivy-backend-misc.json
+          security-checks: 'secret,config'   # 只扫密钥泄露 & 误配置
+          timeout: ${{ env.TRIVY_TIMEOUT }}
+          cache-dir: ${{ env.TRIVY_CACHE_DIR }}
+
+      # 5) 打包构件
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dependency-check-report
+          name: trivy-backend-artifacts
           path: |
-            dc-out/dependency-check-report.html
-            dc-out/dependency-check-report.json
-            dc-out/dependency-check-report.xml
-          if-no-files-found: error
+            trivy-backend-repo.sarif
+            trivy-backend-target.sarif
+            trivy-backend-repo.json
+            trivy-backend-misc.json
+            sbom-backend.cyclonedx.json
+          if-no-files-found: warn
