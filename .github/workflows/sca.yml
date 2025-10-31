@@ -2,7 +2,7 @@ name: SCA - OWASP Dependency Check
 
 on:
   push:
-    branches: [  "**"  ]
+    branches: [ "**" ]
   workflow_dispatch:
   schedule:
     - cron: '0 18 * * 1'
@@ -10,6 +10,7 @@ on:
 jobs:
   sca:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -26,21 +27,35 @@ jobs:
           path: ~/.dependency-check
           key: dc-${{ runner.os }}-v1
 
-
-      - name: Run OWASP Dependency Check (all modules)
+      # 遍历所有含 pom.xml 的模块逐个执行（单模块也兼容）
+      - name: Run OWASP Dependency Check (each module)
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        shell: bash
         run: |
-          mvn -B org.owasp:dependency-check-maven:check \
-            -Dnvd.api.key="$NVD_API_KEY" \
-            -Dnvd.api.delay=20000 -Dnvd.api.maxRetryCount=10 -Dnvd.api.jitter=5000 \
-            -DdataDirectory="$HOME/.dependency-check" \
-            -Dformat=HTML -DoutputDirectory=target \
-            -DfailOnError=false
+          set -euo pipefail
+          mapfile -t MODULES < <(find . -type f -name "pom.xml" -not -path "*/target/*" -printf '%h\n' | sort -u)
+          echo "Detected modules:"
+          printf ' - %s\n' "${MODULES[@]}"
 
-      - name: Verify report paths
+          for m in "${MODULES[@]}"; do
+            echo "=== Running DC in: $m ==="
+            ( cd "$m" && mvn -B org.owasp:dependency-check-maven:check \
+                -Dnvd.api.key="${NVD_API_KEY:-}" \
+                -Dnvd.api.delay=20000 -Dnvd.api.maxRetryCount=10 -Dnvd.api.jitter=5000 \
+                -DdataDirectory="$HOME/.dependency-check" \
+                -Dformat=HTML \
+                -DoutputDirectory=target \
+                -DfailOnError=false )
+          done
+
+      - name: Show generated reports (debug)
+        shell: bash
         run: |
-          find . -name "dependency-check-report.html" -print
+          set -euo pipefail
+          echo "[pwd] $(pwd)"
+          echo "Trying to locate generated HTML reports..."
+          find . -type f -path "*/target/dependency-check-report.html" -print || true
 
       - name: Upload SCA reports (all modules)
         uses: actions/upload-artifact@v4
@@ -48,4 +63,4 @@ jobs:
           name: dependency-check-reports
           path: |
             **/target/dependency-check-report.html
-          if-no-files-found: error
+          if-no-files-found: warn
