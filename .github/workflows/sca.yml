@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 18 * * 1'
+
 jobs:
   sca:
     runs-on: ubuntu-latest
@@ -25,7 +26,8 @@ jobs:
           path: ~/.dependency-check
           key: dc-${{ runner.os }}-v1
 
-      - name: Run OWASP Dependency Check
+
+      - name: Run OWASP Dependency Check (all modules)
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
@@ -36,8 +38,14 @@ jobs:
             -Dformat=HTML -DoutputDirectory=target \
             -DfailOnError=false
 
-      - name: Upload SCA report
+      - name: Verify report paths
+        run: |
+          find . -name "dependency-check-report.html" -print
+
+      - name: Upload SCA reports (all modules)
         uses: actions/upload-artifact@v4
         with:
-          name: dependency-check-report
-          path: target/dependency-check-report.html
+          name: dependency-check-reports
+          path: |
+            **/target/dependency-check-report.html
+          if-no-files-found: error
