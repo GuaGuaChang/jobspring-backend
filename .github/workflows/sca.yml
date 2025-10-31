@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write   # 允许上传 SARIF 到 Security
+      security-events: write   # 上传 SARIF 到 Security
       actions: read
       checks: write
 
@@ -31,7 +31,7 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: maven
-        # working-directory: ./backend   # ← 如果后端在子目录，给下面相关步骤也加上
+        # working-directory: ./backend   # ← 若后端在子目录，给构建/扫描/渲染/上传都加同样的 working-directory
 
       - name: Build (populate ~/.m2 & target)
         run: mvn -B -DskipTests package
@@ -44,7 +44,7 @@ jobs:
           key: trivy-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
           restore-keys: trivy-${{ runner.os }}-
 
-      # 1) 扫描仓库（源码/配置/锁定文件等）→ SARIF（上传到 Security）
+      # --- 1) 仓库根扫描：SARIF + JSON
       - name: Trivy FS scan (repo) → SARIF
         uses: aquasecurity/trivy-action@0.24.0
         with:
@@ -56,16 +56,14 @@ jobs:
           ignore-unfixed: ${{ env.TRIVY_IGNORE_UNFIXED }}
           timeout: ${{ env.TRIVY_TIMEOUT }}
           cache-dir: ${{ env.TRIVY_CACHE_DIR }}
-          # 可选：减少噪声
           args: '--skip-dirs target --skip-dirs .git --skip-dirs .mvn'
 
       - name: Upload SARIF (repo)
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-backend-repo.sarif
-          category: trivy-repo   # ← 加这一行，唯一
+          category: trivy-repo
 
-      # 1b) 同步生成 JSON 报告当构件
       - name: Trivy FS scan (repo) → JSON
         uses: aquasecurity/trivy-action@0.24.0
         with:
@@ -78,12 +76,12 @@ jobs:
           cache-dir: ${{ env.TRIVY_CACHE_DIR }}
           args: '--skip-dirs target --skip-dirs .git --skip-dirs .mvn'
 
-      # 2) 扫描构建产物（target 下的 JAR/WAR，覆盖传递依赖）
-      - name: Trivy FS scan (build artifacts) → SARIF
+      # --- 2) 构建产物扫描（target）：SARIF + JSON
+      - name: Trivy FS scan (target) → SARIF
         uses: aquasecurity/trivy-action@0.24.0
         with:
           scan-type: fs
-          scan-ref: ./target                # 若子目录：./backend/target
+          scan-ref: ./target                 # 若子目录：./backend/target
           format: sarif
           output: trivy-backend-target.sarif
           severity: ${{ env.TRIVY_SEVERITY }}
@@ -97,19 +95,79 @@ jobs:
           sarif_file: trivy-backend-target.sarif
           category: trivy-target
 
-      # 3) 生成 SBOM（CycloneDX）
+      - name: Trivy FS scan (target) → JSON
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scan-ref: ./target
+          format: json
+          output: trivy-backend-target.json
+          ignore-unfixed: ${{ env.TRIVY_IGNORE_UNFIXED }}
+          timeout: ${{ env.TRIVY_TIMEOUT }}
+          cache-dir: ${{ env.TRIVY_CACHE_DIR }}
+
+      # --- 3) 生成 SBOM（CycloneDX）
       - name: Generate SBOM (CycloneDX)
         uses: aquasecurity/trivy-action@0.24.0
         with:
           scan-type: fs
-          scan-ref: ./target                # 或者用 . 扫源码
+          scan-ref: ./target                 # 或改为 . 扫源码
           format: cyclonedx
           output: sbom-backend.cyclonedx.json
           ignore-unfixed: ${{ env.TRIVY_IGNORE_UNFIXED }}
           timeout: ${{ env.TRIVY_TIMEOUT }}
           cache-dir: ${{ env.TRIVY_CACHE_DIR }}
 
-      # 5) 打包构件
+      # --- 4) 安装 Node 22 并把 Trivy JSON 转 HTML（repo + target 各一份）
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Render Trivy JSON → HTML
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > trivy2html.cjs <<'EOF'
+          const fs = require('fs');
+          const inPath = process.argv[2];
+          const outPath = process.argv[3];
+          if (!inPath || !outPath) { console.error('Usage: node trivy2html.cjs <input.json> <output.html>'); process.exit(2); }
+          if (!fs.existsSync(inPath)) { console.error('Input not found:', inPath); process.exit(3); }
+          const data = JSON.parse(fs.readFileSync(inPath, 'utf8'));
+          const results = data.Results || [];
+          const rows = [];
+          const sevOrder = { CRITICAL:4, HIGH:3, MEDIUM:2, LOW:1, UNKNOWN:0 };
+          const counts = { CRITICAL:0, HIGH:0, MEDIUM:0, LOW:0, UNKNOWN:0, TOTAL:0 };
+          function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+          function push(target,v){ const sev=String(v.Severity||'UNKNOWN').toUpperCase();
+            rows.push({severity:sev,pkg:v.PkgName||'',installed:v.InstalledVersion||'',fixed:v.FixedVersion||'',vulnId:v.VulnerabilityID||'',title:v.Title||v.Description||'',target:target||''});
+            counts[sev]=(counts[sev]||0)+1; counts.TOTAL++; }
+          for (const r of results) (r.Vulnerabilities||[]).forEach(v=>push(r.Target||'',v));
+          rows.sort((a,b)=>(sevOrder[b.severity]-sevOrder[a.severity])||a.pkg.localeCompare(b.pkg)||a.vulnId.localeCompare(b.vulnId));
+          const summary =
+            '<span class="pill crit">CRITICAL: '+counts.CRITICAL+'</span>'+
+            '<span class="pill high">HIGH: '+counts.HIGH+'</span>'+
+            '<span class="pill med">MEDIUM: '+counts.MEDIUM+'</span>'+
+            '<span class="pill low">LOW: '+counts.LOW+'</span>'+
+            '<span class="pill unk">UNKNOWN: '+counts.UNKNOWN+'</span>'+
+            '<span class="pill total">TOTAL: '+counts.TOTAL+'</span>'+
+            '<div>Generated at: '+esc(new Date().toISOString())+'</div>';
+          const rowsHtml = rows.map(r =>
+            '<tr><td><code>'+esc(r.severity)+'</code></td><td>'+esc(r.title)+'</td><td><code>'+esc(r.vulnId)+'</code></td><td class="file">'+esc(r.target)+'</td><td><code>'+esc(r.pkg)+'</code></td><td>'+esc(r.installed)+'</td><td>'+esc(r.fixed)+'</td></tr>'
+          ).join('');
+          const html =
+            '<!doctype html><html><head><meta charset="utf-8"><title>Trivy Report</title>'+
+            '<style>body{font:14px/1.5 system-ui,Segoe UI,Roboto,Helvetica,Arial;color:#111;margin:24px}.pill{display:inline-block;padding:2px 8px;border-radius:999px;margin-right:8px;font-weight:600}.crit{background:#ffe3e0;color:#7f1d1d}.high{background:#ffedd5;color:#9a3412}.med{background:#fef9c3;color:#854d0e}.low{background:#ecfccb;color:#365314}.unk{background:#e5e7eb;color:#374151}.total{background:#eaeef2;color:#111827}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px;vertical-align:top}th{background:#f6f8fa;text-align:left;position:sticky;top:0}tr:nth-child(even){background:#fafafa}code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}.file{color:#0969da}</style></head><body>'+
+            '<h1>Trivy Report</h1><div class="summary">'+summary+'</div>'+
+            '<table><thead><tr><th>Severity</th><th>Title</th><th>CVE</th><th>Target</th><th>Package</th><th>Installed</th><th>Fixed</th></tr></thead><tbody>'+rowsHtml+'</tbody></table>'+
+            '</body></html>';
+          fs.writeFileSync(outPath, html, 'utf8'); console.log('Wrote', outPath, 'findings:', rows.length);
+          EOF
+          node trivy2html.cjs trivy-backend-repo.json   trivy-backend-repo.html
+          node trivy2html.cjs trivy-backend-target.json trivy-backend-target.html
+
+      # --- 5) 打包构件
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -118,6 +176,8 @@ jobs:
             trivy-backend-repo.sarif
             trivy-backend-target.sarif
             trivy-backend-repo.json
-            trivy-backend-misc.json
+            trivy-backend-target.json
+            trivy-backend-repo.html
+            trivy-backend-target.html
             sbom-backend.cyclonedx.json
           if-no-files-found: warn
