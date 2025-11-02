@@ -58,6 +58,7 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/api/job_seeker/job_list",
                                 "/api/job_seeker/job_list/search",
+                                "/api/profile",
                                 "/api/skills").permitAll()
                         .anyRequest().authenticated()
                 ).exceptionHandling(ex -> ex
