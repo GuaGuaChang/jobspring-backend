@@ -21,7 +21,6 @@ public class ApplicationController {
 
     private final ApplicationService applicationService;
 
-
     @PostMapping(value = "/{jobId}/applications", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> apply(@PathVariable Long jobId, @ModelAttribute ApplicationDTO form,
                                       @RequestParam(value = "file", required = false) MultipartFile file, Authentication auth) {
