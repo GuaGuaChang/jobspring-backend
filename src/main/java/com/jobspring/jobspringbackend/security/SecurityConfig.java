@@ -57,7 +57,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/job_seeker/job_list",
-                                "/api/job_seeker/job_list/search").permitAll()
+                                "/api/job_seeker/job_list/search",
+                                "/api/skills").permitAll()
                         .anyRequest().authenticated()
                 ).exceptionHandling(ex -> ex
                         .authenticationEntryPoint(restEntryPoint())
