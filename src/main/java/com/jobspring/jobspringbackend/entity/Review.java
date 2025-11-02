@@ -45,6 +45,6 @@ public class Review {
     @Column(name = "public_at")
     private LocalDateTime publicAt;
 
-    @Column(name = "image_url")
+    @Column(name = "image_url", columnDefinition = "LONGTEXT")
     private String imageUrl;
 }
