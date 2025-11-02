@@ -72,7 +72,7 @@ public class HrController {
 
     //更新某个申请状态
     @PostMapping("/applications/{applicationId}/status")
-    @PreAuthorize("hasAnyRole('HR')")
+    @PreAuthorize("hasRole('HR')")
     public ResponseEntity<ApplicationBriefResponse> updateStatus(
             @PathVariable Long applicationId,
             @RequestBody UpdateStatusBody body,
