@@ -84,7 +84,7 @@ class HrControllerTest {
                 }
                 """;
 
-        mockMvc.perform(patch("/api/hr/applications/{applicationId}/status", 44L)
+        mockMvc.perform(post("/api/hr/applications/{applicationId}/status", 44L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonBody)
                         .with(csrf()))
