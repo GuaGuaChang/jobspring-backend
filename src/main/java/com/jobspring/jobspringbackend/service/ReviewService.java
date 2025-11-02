@@ -14,7 +14,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 
 @Service
@@ -34,27 +38,33 @@ public class ReviewService {
         return reviewRepository.findAll();
     }
 
+    public ReviewDTO getReviewById(Long id) {
+        Review review = reviewRepository.findById(id)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Review not found"));
+        return toDto(review);
+    }
+
     @Transactional
     public ReviewDTO createReview(JobSeekerReviewDTO jobseekerReviewDTO, Long userId) {
-        // Retrieve the application by ID
         Application application = applicationRepository.findById(jobseekerReviewDTO.getApplicationId())
                 .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Application not found"));
 
-
-        // Create a new review
         Review review = new Review();
         review.setApplication(application);
         review.setTitle(jobseekerReviewDTO.getTitle());
         review.setContent(jobseekerReviewDTO.getContent());
         review.setRating(jobseekerReviewDTO.getRating());
-        review.setStatus(0); // Default status 0
+        review.setStatus(0);
         review.setSubmittedAt(LocalDateTime.now());
         review.setReviewedBy(null);
-        review.setReviewNote(null); // Set reviewNote to null
-        review.setPublicAt(null); // Set publicAt to null initially
-        review.setImageUrl(jobseekerReviewDTO.getImageUrl());
-        Review saved = reviewRepository.save(review);
+        review.setReviewNote(null);
+        review.setPublicAt(null);
 
+        if (jobseekerReviewDTO.getImageUrl() != null && !jobseekerReviewDTO.getImageUrl().isEmpty()) {
+            review.setImageUrl(jobseekerReviewDTO.getImageUrl());
+        }
+
+        Review saved = reviewRepository.save(review);
         return toDto(saved);
     }
 

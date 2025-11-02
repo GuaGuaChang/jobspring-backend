@@ -3,6 +3,10 @@ package com.jobspring.jobspringbackend.controller;
 import com.jobspring.jobspringbackend.dto.*;
 
 import com.jobspring.jobspringbackend.entity.Job;
+import com.jobspring.jobspringbackend.entity.Review;
+import com.jobspring.jobspringbackend.exception.BizException;
+import com.jobspring.jobspringbackend.exception.ErrorCode;
+import com.jobspring.jobspringbackend.repository.ReviewRepository;
 import com.jobspring.jobspringbackend.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -91,6 +95,11 @@ public class AdminController {
         return ResponseEntity.ok(reviewDTOs);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/check_review/{id}")
+    public ReviewDTO getReviewById(@PathVariable Long id) {
+        return reviewService.getReviewById(id);
+    }
 
     // 指定公司查看（会做归属校验）
     @PreAuthorize("hasRole('ADMIN')")
