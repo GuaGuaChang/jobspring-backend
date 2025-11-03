@@ -13,4 +13,5 @@ public class CompanyReviewDTO {
     private Integer rating;
     private LocalDateTime publicAt;
     private String imageUrl;
+    private Integer status;
 }

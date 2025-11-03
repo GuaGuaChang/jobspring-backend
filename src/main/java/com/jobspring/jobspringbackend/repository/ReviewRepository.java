@@ -15,10 +15,11 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findAll();
 
     @Query("""
-        SELECT r FROM Review r
-        JOIN r.application a
-        JOIN a.job j
-        WHERE j.company.id = :companyId
-    """)
+                SELECT r FROM Review r
+                JOIN r.application a
+                JOIN a.job j
+                WHERE j.company.id = :companyId
+                  AND r.status = 1
+            """)
     Page<Review> findByCompanyId(@Param("companyId") Long companyId, Pageable pageable);
 }
