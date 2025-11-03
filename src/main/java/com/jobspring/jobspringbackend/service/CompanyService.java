@@ -13,8 +13,11 @@ import com.jobspring.jobspringbackend.repository.JobRepository;
 import com.jobspring.jobspringbackend.repository.ReviewRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class CompanyService {
@@ -77,8 +80,13 @@ public class CompanyService {
 
     public Page<CompanyReviewDTO> getCompanyReviews(Long companyId, Pageable pageable) {
         Page<Review> reviews = reviewRepository.findByCompanyId(companyId, pageable);
-        return reviews.map(this::toDto);
+        List<CompanyReviewDTO> filtered = reviews.stream()
+                .filter(r -> r.getStatus() != null && r.getStatus() == 1)
+                .map(this::toDto)
+                .toList();
+        return new PageImpl<>(filtered, pageable, filtered.size());
     }
+
 
 
     private CompanyReviewDTO toDto(Review r) {
