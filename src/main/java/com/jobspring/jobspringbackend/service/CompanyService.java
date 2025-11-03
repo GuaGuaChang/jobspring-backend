@@ -89,6 +89,7 @@ public class CompanyService {
         dto.setRating(r.getRating());
         dto.setPublicAt(r.getPublicAt());
         dto.setImageUrl(r.getImageUrl());
+        dto.setStatus(r.getStatus());
 
         if (r.getApplication() != null &&
                 r.getApplication().getJob() != null &&
