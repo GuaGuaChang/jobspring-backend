@@ -29,7 +29,6 @@ public class ApplicationController {
         return ResponseEntity.created(URI.create("/api/applications/" + id)).build();
     }
 
-
     @PreAuthorize("hasAnyRole('HR')")
     @GetMapping("/{applicationId}")
     public ResponseEntity<ApplicationDetailResponse> getApplicationDetail(
