@@ -21,7 +21,6 @@ import java.net.URI;
 public class JobController {
     private final JobService jobService;
 
-    // 新建岗位（默认上架）
     @PreAuthorize("hasAnyRole('HR')")
     @PostMapping("/companies/{companyId}/jobs")
     public ResponseEntity<JobResponse> create(@PathVariable Long companyId,
@@ -30,7 +29,6 @@ public class JobController {
         return ResponseEntity.created(URI.create("/api/hr/jobs/" + res.getId())).body(res);
     }
 
-    // 编辑岗位（逻辑变成：复制新建 + 老的下线）
     @PreAuthorize("hasAnyRole('HR')")
     @PatchMapping("/companies/{companyId}/jobs/{jobId}")
     public ResponseEntity<JobResponse> update(@PathVariable Long companyId,
@@ -40,7 +38,6 @@ public class JobController {
         return ResponseEntity.ok(res);
     }
 
-    // 下线岗位（快捷端点，可选）
     @PreAuthorize("hasAnyRole('HR')")
     @PostMapping("/companies/{companyId}/jobs/{jobId}/invalid")
     public ResponseEntity<Void> deactivate(@PathVariable Long companyId,
@@ -50,7 +47,6 @@ public class JobController {
     }
 
 
-    // 查看岗位
     @PreAuthorize("hasRole('HR')")
     @GetMapping("/companies/jobs")
     public ResponseEntity<Page<JobResponse>> list(Pageable pageable,

@@ -26,13 +26,11 @@ public class CompanyController {
         this.companyRepository = companyRepository;
     }
 
-    // 创建公司
     @PostMapping
     public Company createCompany(@RequestBody Company req) {
         return companyRepository.save(req);
     }
 
-    //查询某公司下的岗位列表
     @GetMapping("/{companyId}/jobs")
     public ResponseEntity<Page<JobResponse>> listCompanyJobs(
             @PathVariable Long companyId,
