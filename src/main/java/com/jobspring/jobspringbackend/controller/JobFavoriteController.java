@@ -17,7 +17,6 @@ public class JobFavoriteController {
 
     private final JobFavoriteService favoriteService;
 
-    // 收藏
     @PreAuthorize("hasRole('CANDIDATE')")
     @PostMapping("/{jobId}")
     public ResponseEntity<Void> add(@PathVariable Long jobId, Authentication auth) {
@@ -26,7 +25,6 @@ public class JobFavoriteController {
         return ResponseEntity.noContent().build();
     }
 
-    // 取消收藏
     @PreAuthorize("hasRole('CANDIDATE')")
     @DeleteMapping("/{jobId}")
     public ResponseEntity<Void> remove(@PathVariable Long jobId, Authentication auth) {
@@ -35,7 +33,6 @@ public class JobFavoriteController {
         return ResponseEntity.noContent().build();
     }
 
-    // 是否已收藏
     @PreAuthorize("hasRole('CANDIDATE')")
     @GetMapping("/{jobId}/is-favorited")
     public ResponseEntity<Boolean> isFavorited(@PathVariable Long jobId, Authentication auth) {
@@ -43,7 +40,6 @@ public class JobFavoriteController {
         return ResponseEntity.ok(favoriteService.isFavorited(userId, jobId));
     }
 
-    // 我的收藏列表（分页）
     @PreAuthorize("hasRole('CANDIDATE')")
     @GetMapping
     public ResponseEntity<Page<FavoriteJobResponse>> myFavorites(Authentication auth, Pageable pageable) {
