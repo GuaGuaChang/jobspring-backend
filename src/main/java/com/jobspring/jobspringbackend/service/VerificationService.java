@@ -42,18 +42,14 @@ public class VerificationService {
     public void sendRegisterCode(String email) {
         LocalDateTime now = LocalDateTime.now();
 
-        long sentToday = repo.countByEmailAndPurposeAndSentAtAfter(
-                email, PURPOSE_REGISTER, now.toLocalDate().atStartOfDay());
+        long sentToday = repo.countByEmailAndPurposeAndSentAtAfter(email, PURPOSE_REGISTER, now.toLocalDate().atStartOfDay());
         if (sentToday >= dailyLimit) {
             throw new BizException(ErrorCode.TOO_MANY_REQUESTS, "Too many requests. Try again tomorrow.");
         }
 
-        Optional<EmailVerificationCode> recentActive = repo
-                .findFirstByEmailAndPurposeAndStatusAndExpiresAtAfterOrderBySentAtDesc(
-                        email, PURPOSE_REGISTER, 0, now);
+        Optional<EmailVerificationCode> recentActive = repo.findFirstByEmailAndPurposeAndStatusAndExpiresAtAfterOrderBySentAtDesc(email, PURPOSE_REGISTER, 0, now);
 
-        if (recentActive.isPresent() &&
-                recentActive.get().getSentAt().plusSeconds(cooldownSeconds).isAfter(now)) {
+        if (recentActive.isPresent() && recentActive.get().getSentAt().plusSeconds(cooldownSeconds).isAfter(now)) {
             throw new BizException(ErrorCode.TOO_MANY_REQUESTS, "Please wait before requesting another code.");
         }
 
@@ -71,20 +67,13 @@ public class VerificationService {
         evc.setVerifiedAt(null);
         repo.save(evc);
 
-        mail.sendPlainText(
-                email,
-                "Your JobSpring verification code",
-                "Your verification code is: " + code + "\nIt expires in " + expMinutes + " minutes."
-        );
+        mail.sendPlainText(email, "Your JobSpring verification code", "Your verification code is: " + code + "\nIt expires in " + expMinutes + " minutes.");
     }
 
     @Transactional
     public void verifyOrThrow(String email, String code) {
         LocalDateTime now = LocalDateTime.now();
-        EmailVerificationCode evc = repo
-                .findFirstByEmailAndPurposeAndStatusAndExpiresAtAfterOrderBySentAtDesc(
-                        email, PURPOSE_REGISTER, 0, now)
-                .orElseThrow(() -> new BizException(ErrorCode.INVALID_ARGUMENT, "Invalid or expired verification code."));
+        EmailVerificationCode evc = repo.findFirstByEmailAndPurposeAndStatusAndExpiresAtAfterOrderBySentAtDesc(email, PURPOSE_REGISTER, 0, now).orElseThrow(() -> new BizException(ErrorCode.INVALID_ARGUMENT, "Invalid or expired verification code."));
 
         if (evc.getAttemptCount() >= maxAttempts) {
             evc.setStatus(3); // BLOCKED

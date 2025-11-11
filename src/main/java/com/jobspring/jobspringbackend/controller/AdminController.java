@@ -60,26 +60,21 @@ public class AdminController {
     @GetMapping("/status")
     public ResponseEntity<List<Map<String, Object>>> getAllJobStatus() {
         List<Job> jobs = jobService.getAllJobs();
-        List<Map<String, Object>> response = jobs.stream()
-                .map(job -> {
-                    Map<String, Object> jobInfo = new HashMap<>();
-                    jobInfo.put("id", job.getId());
-                    jobInfo.put("title", job.getTitle());
-                    jobInfo.put("company", job.getCompany().getName());
-                    jobInfo.put("companyId", job.getCompany().getId());
-                    jobInfo.put("status", job.getStatus());
-                    return jobInfo;
-                })
-                .collect(Collectors.toList());
+        List<Map<String, Object>> response = jobs.stream().map(job -> {
+            Map<String, Object> jobInfo = new HashMap<>();
+            jobInfo.put("id", job.getId());
+            jobInfo.put("title", job.getTitle());
+            jobInfo.put("company", job.getCompany().getName());
+            jobInfo.put("companyId", job.getCompany().getId());
+            jobInfo.put("status", job.getStatus());
+            return jobInfo;
+        }).collect(Collectors.toList());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/search")
-    public Page<JobDTO> searchJobs(
-            @RequestParam String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    public Page<JobDTO> searchJobs(@RequestParam String keyword, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("postedAt").descending());
         return adminService.searchJobs(keyword, pageable);
@@ -88,10 +83,7 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/check_review")
     public ResponseEntity<List<ReviewDTO>> checkReview() {
-        List<ReviewDTO> reviewDTOs = reviewService.getAllReviews()
-                .stream()
-                .map(reviewService::toDto)
-                .collect(Collectors.toList());
+        List<ReviewDTO> reviewDTOs = reviewService.getAllReviews().stream().map(reviewService::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(reviewDTOs);
     }
 
@@ -101,35 +93,26 @@ public class AdminController {
         return reviewService.getReviewById(id);
     }
 
-    // 指定公司查看（会做归属校验）
+
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/companies/{companyId}/applications")
-    public ResponseEntity<Page<ApplicationBriefResponse>> listByCompany(
-            @PathVariable Long companyId,
-            @RequestParam(required = false) Long jobId,
-            @RequestParam(required = false) Integer status,
-            Pageable pageable,
-            Authentication auth
-    ) {
+    public ResponseEntity<Page<ApplicationBriefResponse>> listByCompany(@PathVariable Long companyId, @RequestParam(required = false) Long jobId, @RequestParam(required = false) Integer status, Pageable pageable, Authentication auth) {
         Long hrUserId = Long.parseLong(auth.getName());
-        Page<ApplicationBriefResponse> page = hrApplicationService
-                .listCompanyApplications(hrUserId, companyId, jobId, status, pageable);
+        Page<ApplicationBriefResponse> page = hrApplicationService.listCompanyApplications(hrUserId, companyId, jobId, status, pageable);
         return ResponseEntity.ok(page);
     }
 
-    // 下线岗位（快捷端点，可选）
+
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/companies/{companyId}/jobs/{jobId}/invalid")
-    public ResponseEntity<Void> deactivate(@PathVariable Long companyId,
-                                           @PathVariable Long jobId) {
+    public ResponseEntity<Void> deactivate(@PathVariable Long companyId, @PathVariable Long jobId) {
         jobService.deactivateJob(companyId, jobId);
         return ResponseEntity.noContent().build();
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/review/pass/{id}")
-    public ResponseEntity<ReviewDTO> passReview(@PathVariable Long id,
-                                                @RequestBody NoteDTO request) {
+    public ResponseEntity<ReviewDTO> passReview(@PathVariable Long id, @RequestBody NoteDTO request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long userId = Long.parseLong(authentication.getName());
 
@@ -139,8 +122,7 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/review/reject/{id}")
-    public ResponseEntity<ReviewDTO> rejectReview(@PathVariable Long id,
-                                                  @RequestBody NoteDTO request) {
+    public ResponseEntity<ReviewDTO> rejectReview(@PathVariable Long id, @RequestBody NoteDTO request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long userId = Long.parseLong(authentication.getName());
 
@@ -148,22 +130,18 @@ public class AdminController {
         return ResponseEntity.ok(review);
     }
 
-    // 升 HR（可选绑定公司），返回 204
+
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{userId}/make-hr")
-    public ResponseEntity<Void> makeHr(@PathVariable Long userId,
-                                       @RequestBody(required = false) PromoteToHrRequest req) {
+    public ResponseEntity<Void> makeHr(@PathVariable Long userId, @RequestBody(required = false) PromoteToHrRequest req) {
         adminService.makeHr(userId, req);
         return ResponseEntity.noContent().build();
     }
 
-    // Admin 通用搜索：q 在多字段里 OR 匹配，分页/排序
+
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/jobs")
-    public ResponseEntity<Page<JobSearchResponse>> search(
-            @RequestParam(required = false) String q,
-            Pageable pageable
-    ) {
+    public ResponseEntity<Page<JobSearchResponse>> search(@RequestParam(required = false) String q, Pageable pageable) {
         return ResponseEntity.ok(adminService.search(q, pageable));
     }
 
@@ -177,9 +155,7 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/search_user")
-    public ResponseEntity<Page<UserDTO>> searchUsers(
-            @RequestParam(required = false, name = "q") String q,
-            Pageable pageable) {
+    public ResponseEntity<Page<UserDTO>> searchUsers(@RequestParam(required = false, name = "q") String q, Pageable pageable) {
 
         Page<UserDTO> result = adminService.searchUsers(q, pageable);
         return ResponseEntity.ok(result);
@@ -188,9 +164,7 @@ public class AdminController {
 
     @PostMapping(value = "/company/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CompanyDTO> createCompany(
-            @RequestPart("company") CompanyDTO companyDTO,
-            @RequestPart(value = "logo", required = false) MultipartFile logoFile) throws IOException {
+    public ResponseEntity<CompanyDTO> createCompany(@RequestPart("company") CompanyDTO companyDTO, @RequestPart(value = "logo", required = false) MultipartFile logoFile) throws IOException {
 
         if (logoFile != null && !logoFile.isEmpty()) {
             String filename = System.currentTimeMillis() + "_" + logoFile.getOriginalFilename();

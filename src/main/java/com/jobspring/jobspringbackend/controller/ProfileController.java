@@ -40,9 +40,7 @@ public class ProfileController {
     }
 
     @PostMapping
-    public ProfileUpdateResponseDTO createOrUpdateProfile(
-            @AuthenticationPrincipal String userIdStr,
-            @RequestBody ProfileRequestDTO request) {
+    public ProfileUpdateResponseDTO createOrUpdateProfile(@AuthenticationPrincipal String userIdStr, @RequestBody ProfileRequestDTO request) {
 
         if (userIdStr == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");

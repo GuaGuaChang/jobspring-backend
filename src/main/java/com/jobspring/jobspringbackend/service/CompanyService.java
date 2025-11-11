@@ -32,8 +32,7 @@ public class CompanyService {
     private ReviewRepository reviewRepository;
 
     public CompanyDTO getCompanyById(Long id) {
-        Company company = companyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Company not found with id: " + id));
+        Company company = companyRepository.findById(id).orElseThrow(() -> new RuntimeException("Company not found with id: " + id));
 
         return convertToCompanyDTO(company);
     }
@@ -57,9 +56,7 @@ public class CompanyService {
     }
 
     public Page<JobResponse> listCompanyJobs(Long companyId, Integer status, Pageable pageable) {
-        Page<Job> page = (status == null)
-                ? jobRepository.findByCompanyId(companyId, pageable)
-                : jobRepository.findByCompanyIdAndStatus(companyId, status, pageable);
+        Page<Job> page = (status == null) ? jobRepository.findByCompanyId(companyId, pageable) : jobRepository.findByCompanyIdAndStatus(companyId, status, pageable);
         return page.map(this::toResponse);
     }
 
@@ -80,13 +77,9 @@ public class CompanyService {
 
     public Page<CompanyReviewDTO> getCompanyReviews(Long companyId, Pageable pageable) {
         Page<Review> reviews = reviewRepository.findByCompanyId(companyId, pageable);
-        List<CompanyReviewDTO> filtered = reviews.stream()
-                .filter(r -> r.getStatus() != null && r.getStatus() == 1)
-                .map(this::toDto)
-                .toList();
+        List<CompanyReviewDTO> filtered = reviews.stream().filter(r -> r.getStatus() != null && r.getStatus() == 1).map(this::toDto).toList();
         return new PageImpl<>(filtered, pageable, filtered.size());
     }
-
 
 
     private CompanyReviewDTO toDto(Review r) {
@@ -97,10 +90,9 @@ public class CompanyService {
         dto.setRating(r.getRating());
         dto.setPublicAt(r.getPublicAt());
         dto.setImageUrl(r.getImageUrl());
+        dto.setStatus(r.getStatus());
 
-        if (r.getApplication() != null &&
-                r.getApplication().getJob() != null &&
-                r.getApplication().getJob().getCompany() != null) {
+        if (r.getApplication() != null && r.getApplication().getJob() != null && r.getApplication().getJob().getCompany() != null) {
             dto.setCompanyId(r.getApplication().getJob().getCompany().getId());
         }
 

@@ -52,7 +52,8 @@ public class ApplicationService {
 
     @Transactional
     public Long apply(Long jobId, Long userId, ApplicationDTO form, MultipartFile file) {
-/*        Job job = jobRepo.findById(jobId).orElseThrow(() -> new EntityNotFoundException("Job not found"));
+
+        Job job = jobRepo.findById(jobId).orElseThrow(() -> new EntityNotFoundException("Job not found"));
         if (job.getStatus() != 0) {
             throw new IllegalStateException("Job inactive");
         }
@@ -62,6 +63,7 @@ public class ApplicationService {
             throw new IllegalArgumentException("Already applied");
         }
 
+
         Application app = new Application();
         app.setJob(job);
         app.setUser(user);
@@ -69,63 +71,20 @@ public class ApplicationService {
         app.setAppliedAt(LocalDateTime.now());
         app.setResumeProfile(form.getResumeProfile());
 
-        if (user.getProfile() != null) {
-            app.setProfile(user.getProfile());
-        }
 
-        // 优先：用户 Profile 的简历 URL
-        String resumeUrl = null;
-        if (user.getProfile() != null && user.getProfile().getFileUrl() != null) {
-            resumeUrl = user.getProfile().getFileUrl();
-        } else if (file != null && !file.isEmpty()) {
-            // 次选：表单上传的文件
-            validateFile(file);
-            resumeUrl = saveToLocal(file, "applications/" + jobId + "/" + userId);
-        }
-
-        app.setResumeUrl(resumeUrl);
-
-        appRepo.save(app);
-        return app.getId();*/
-
-        // 1) 基础校验
-        Job job = jobRepo.findById(jobId)
-                .orElseThrow(() -> new EntityNotFoundException("Job not found"));
-        if (job.getStatus() != 0) {
-            throw new IllegalStateException("Job inactive");
-        }
-
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-        if (appRepo.existsByJobAndUser(job, user)) {
-            throw new IllegalArgumentException("Already applied");
-        }
-
-        // 2) 组装 Application
-        Application app = new Application();
-        app.setJob(job);
-        app.setUser(user);
-        app.setStatus(0);
-        app.setAppliedAt(LocalDateTime.now());
-        app.setResumeProfile(form.getResumeProfile());
-
-        // 关键：优先取 Profile.fileUrl；否则用上传文件转 base64 写入 resumeUrl
         String resumeUrlToSave = null;
 
-        // 2.1 优先：用户 Profile 的 fileUrl
-        if (user.getProfile() != null && user.getProfile().getFileUrl() != null
-                && !user.getProfile().getFileUrl().isBlank()) {
+
+        if (user.getProfile() != null && user.getProfile().getFileUrl() != null && !user.getProfile().getFileUrl().isBlank()) {
             resumeUrlToSave = user.getProfile().getFileUrl();
-            // 绑定 Profile，避免后续查询 JOIN 丢失
+
             app.setProfile(user.getProfile());
         } else {
-            // 2.2 其次：表单文件 → base64 data URL
+
             if (file != null && !file.isEmpty()) {
                 validateFile(file);
                 try {
-                    String ct = Optional.ofNullable(file.getContentType())
-                            .filter(s -> !s.isBlank())
-                            .orElse("application/octet-stream");
+                    String ct = Optional.ofNullable(file.getContentType()).filter(s -> !s.isBlank()).orElse("application/octet-stream");
                     String base64 = java.util.Base64.getEncoder().encodeToString(file.getBytes());
                     resumeUrlToSave = "data:" + ct + ";base64," + base64;
                 } catch (IOException e) {
@@ -138,7 +97,7 @@ public class ApplicationService {
             }
         }
 
-        // 2.3 如果两者都没有，给出明确错误（可按需改成允许空）
+
         if (resumeUrlToSave == null) {
             throw new IllegalArgumentException("No resume provided: neither profile.fileUrl nor uploaded file");
         }
@@ -146,15 +105,7 @@ public class ApplicationService {
         app.setResumeUrl(resumeUrlToSave);
         var saved = appRepo.save(app);
 
-        publisher.publishEvent(new ApplicationSubmittedEvent(
-                saved.getId(),
-                job.getId(),
-                job.getCompany().getId(),
-                job.getTitle(),
-                user.getId(),
-                user.getFullName(),
-                user.getEmail()
-        ));
+        publisher.publishEvent(new ApplicationSubmittedEvent(saved.getId(), job.getId(), job.getCompany().getId(), job.getTitle(), user.getId(), user.getFullName(), user.getEmail()));
 
         return app.getId();
     }
@@ -162,25 +113,21 @@ public class ApplicationService {
     private void validateFile(MultipartFile f) {
         if (f.getSize() > 10 * 1024 * 1024) throw new IllegalArgumentException("File too large");
         String ct = Optional.ofNullable(f.getContentType()).orElse("");
-        if (!(ct.equals("application/pdf") || ct.equals("application/zip")
-                || ct.startsWith("image/") || ct.equals("application/msword")
-                || ct.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) {
+        if (!(ct.equals("application/pdf") || ct.equals("application/zip") || ct.startsWith("image/") || ct.equals("application/msword") || ct.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) {
             throw new IllegalArgumentException("Unsupported file type");
         }
     }
 
     public ApplicationDetailResponse getApplicationDetailForCompanyMember(Long userId, Long applicationId) {
 
-        Application app = applicationRepository.findByIdWithJobAndCompany(applicationId)
-                .orElseThrow(() -> new EntityNotFoundException("Application not found"));
+        Application app = applicationRepository.findByIdWithJobAndCompany(applicationId).orElseThrow(() -> new EntityNotFoundException("Application not found"));
 
         Long jobCompanyId = app.getJob().getCompany().getId();
 
         Long userCompanyId = findCompanyIdForUser(userId);
 
         if (!jobCompanyId.equals(userCompanyId)) {
-            throw new org.springframework.security.access.AccessDeniedException(
-                    "Application does not belong to your company");
+            throw new org.springframework.security.access.AccessDeniedException("Application does not belong to your company");
         }
 
 
@@ -189,9 +136,7 @@ public class ApplicationService {
 
 
     private Long findCompanyIdForUser(Long userId) {
-        return memberRepo.findCompanyIdByHrUserId(userId)
-                .orElseThrow(() -> new org.springframework.security.access.AccessDeniedException(
-                        "Not HR or no company bound."));
+        return memberRepo.findCompanyIdByHrUserId(userId).orElseThrow(() -> new org.springframework.security.access.AccessDeniedException("Not HR or no company bound."));
     }
 
     private ApplicationDetailResponse toDetail(Application a) {

@@ -39,15 +39,13 @@ public class ReviewService {
     }
 
     public ReviewDTO getReviewById(Long id) {
-        Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Review not found"));
+        Review review = reviewRepository.findById(id).orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Review not found"));
         return toDto(review);
     }
 
     @Transactional
     public ReviewDTO createReview(JobSeekerReviewDTO jobseekerReviewDTO, Long userId) {
-        Application application = applicationRepository.findById(jobseekerReviewDTO.getApplicationId())
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Application not found"));
+        Application application = applicationRepository.findById(jobseekerReviewDTO.getApplicationId()).orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Application not found"));
 
         Review review = new Review();
         review.setApplication(application);
@@ -70,15 +68,13 @@ public class ReviewService {
 
     @Transactional
     public ReviewDTO approveReview(Long id, Long adminId, String note) {
-        Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Review not found"));
+        Review review = reviewRepository.findById(id).orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Review not found"));
 
         if (review.getStatus() != 0) {
             throw new BizException(ErrorCode.CONFLICT, "Review is not pending, cannot approve");
         }
 
-        User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Admin not found"));
+        User admin = userRepository.findById(adminId).orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Admin not found"));
 
         review.setStatus(1); // approved
         review.setReviewedBy(admin);
@@ -92,15 +88,13 @@ public class ReviewService {
 
     @Transactional
     public ReviewDTO rejectReview(Long id, Long adminId, String note) {
-        Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Review not found"));
+        Review review = reviewRepository.findById(id).orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Review not found"));
 
         if (review.getStatus() != 0) {
             throw new BizException(ErrorCode.CONFLICT, "Review is not pending, cannot reject");
         }
 
-        User admin = userRepository.findById(adminId)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Admin not found"));
+        User admin = userRepository.findById(adminId).orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Admin not found"));
 
         review.setStatus(2); // withdraw
         review.setReviewedBy(admin);

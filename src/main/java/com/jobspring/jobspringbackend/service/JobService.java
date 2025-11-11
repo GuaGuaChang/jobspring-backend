@@ -45,19 +45,19 @@ public class JobService {
         return jobRepository.findAll();
     }
 
-    // 为求职者获取职位列表
+
     public Page<JobDTO> getJobSeekerJobs(Pageable pageable) {
         Page<Job> jobs = jobRepository.findByStatus(0, pageable);
         return jobs.map(this::convertToJobSeekerDTO);
     }
 
-    // 搜索职位（求职者用）
+
     public Page<JobDTO> searchJobSeekerJobs(String keyword, Pageable pageable) {
         Page<Job> jobs = jobRepository.searchJobs(keyword, pageable);
         return jobs.map(this::convertToJobSeekerDTO);
     }
 
-    // 转换方法
+
     private JobDTO convertToJobSeekerDTO(Job job) {
         JobDTO dto = new JobDTO();
         dto.setId(job.getId());
@@ -81,7 +81,7 @@ public class JobService {
         return dto;
     }
 
-    // 获取工作类型名称
+
     private String getEmploymentTypeName(Integer type) {
         if (type == null) return "未知";
         return switch (type) {
@@ -92,24 +92,23 @@ public class JobService {
         };
     }
 
-    // 获取职位标签（技能）
+
     private List<String> getJobTags(Long jobId) {
         return skillRepository.findSkillNamesByJobId(jobId);
     }
 
     private void validateSalaryRange(JobCreateRequest req) {
-        if (req.getSalaryMin() != null && req.getSalaryMax() != null
-                && req.getSalaryMin().compareTo(req.getSalaryMax()) > 0) {
+        if (req.getSalaryMin() != null && req.getSalaryMax() != null && req.getSalaryMin().compareTo(req.getSalaryMax()) > 0) {
             throw new IllegalArgumentException("salaryMin cannot be greater than salaryMax");
         }
     }
 
     private void validateSalaryRange(JobUpdateRequest req) {
-        if (req.getSalaryMin() != null && req.getSalaryMax() != null
-                && req.getSalaryMin().compareTo(req.getSalaryMax()) > 0) {
+        if (req.getSalaryMin() != null && req.getSalaryMax() != null && req.getSalaryMin().compareTo(req.getSalaryMax()) > 0) {
             throw new IllegalArgumentException("salaryMin cannot be greater than salaryMax");
         }
     }
+
 
     private JobResponse toResponse(Job j) {
         JobResponse r = new JobResponse();
@@ -126,7 +125,7 @@ public class JobService {
         return r;
     }
 
-    // HR：在指定公司下创建岗位（默认上架）
+
     @Transactional
     public JobResponse createJob(Long companyId, JobCreateRequest req) {
         validateSalaryRange(req);
@@ -142,25 +141,24 @@ public class JobService {
         j.setSalaryMin(req.getSalaryMin());
         j.setSalaryMax(req.getSalaryMax());
         j.setDescription(req.getDescription());
-        j.setStatus(0); // 上架
+        j.setStatus(0);
         j.setPostedAt(LocalDateTime.now());
 
         jobRepository.save(j);
         return toResponse(j);
     }
 
-    // 编辑岗位（逻辑变成：复制新建 + 老的下线）
+
     @Transactional
     public JobResponse replaceJob(Long companyId, Long jobId, JobUpdateRequest req) {
-        // 找到旧岗位
-        Job oldJob = jobRepository.findByIdAndCompanyId(jobId, companyId)
-                .orElseThrow(() -> new EntityNotFoundException("Job not found"));
 
-        // 将旧岗位下线
-        oldJob.setStatus(1); // 1 = 下线
+        Job oldJob = jobRepository.findByIdAndCompanyId(jobId, companyId).orElseThrow(() -> new EntityNotFoundException("Job not found"));
+
+
+        oldJob.setStatus(1);
         jobRepository.save(oldJob);
 
-        // 新建岗位（复制旧岗位的基础信息 + 更新请求内容）
+
         Job newJob = new Job();
         newJob.setCompany(oldJob.getCompany());
         newJob.setTitle(req.getTitle() != null ? req.getTitle() : oldJob.getTitle());
@@ -169,7 +167,7 @@ public class JobService {
         newJob.setSalaryMin(req.getSalaryMin() != null ? req.getSalaryMin() : oldJob.getSalaryMin());
         newJob.setSalaryMax(req.getSalaryMax() != null ? req.getSalaryMax() : oldJob.getSalaryMax());
         newJob.setDescription(req.getDescription() != null ? req.getDescription() : oldJob.getDescription());
-        newJob.setStatus(0); // 默认新建为上架
+        newJob.setStatus(0);
         newJob.setPostedAt(LocalDateTime.now());
 
         jobRepository.save(newJob);
@@ -180,33 +178,26 @@ public class JobService {
 
     @Transactional
     public void deactivateJob(Long companyId, Long jobId) {
-        Job job = jobRepository.findByIdAndCompanyId(jobId, companyId)
-                .orElseThrow(() -> new EntityNotFoundException("Job not found"));
+        Job job = jobRepository.findByIdAndCompanyId(jobId, companyId).orElseThrow(() -> new EntityNotFoundException("Job not found"));
 
-        // 1. 下线岗位
+
         job.setStatus(1);
         jobRepository.save(job);
 
-        // 2. 同步更新所有相关申请状态为 4（无效）
+
         publisher.publishEvent(new JobDeactivatedEvent(companyId, jobId));
         //applicationRepository.updateStatusByJobId(jobId, 4);
     }
 
-    // HR 查看本公司岗位（包含上下线）
+
     public Page<JobResponse> listJobs(Long companyId, Integer status, Pageable pageable) {
-        Page<Job> page = (status == null)
-                ? jobRepository.findByCompanyId(companyId, pageable)
-                : jobRepository.findByCompanyIdAndStatus(companyId, status, pageable);
+        Page<Job> page = (status == null) ? jobRepository.findByCompanyId(companyId, pageable) : jobRepository.findByCompanyIdAndStatus(companyId, status, pageable);
         return page.map(this::toResponse);
     }
 
 
-
-    // 根据 userId 找到 HR 所属的公司
     public Long findCompanyIdByUserId(Long userId) {
-        return companyMemberRepository.findFirstByUserIdAndRole(userId, "HR")
-                .map(m -> m.getCompany().getId())
-                .orElseThrow(() -> new EntityNotFoundException("HR membership not found"));
+        return companyMemberRepository.findFirstByUserIdAndRole(userId, "HR").map(m -> m.getCompany().getId()).orElseThrow(() -> new EntityNotFoundException("HR membership not found"));
     }
 
 }
