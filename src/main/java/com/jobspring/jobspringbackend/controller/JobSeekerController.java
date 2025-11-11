@@ -41,7 +41,7 @@ public class JobSeekerController {
     @Autowired
     private JobseekerApplicationService jobseekerApplicationService;
 
-    // 获取求职者职位列表
+
     @GetMapping("/job_list")
     public Page<JobDTO> getJobList(
             @RequestParam(defaultValue = "0") int page,
@@ -56,7 +56,7 @@ public class JobSeekerController {
         return jobService.getJobSeekerJobs(pageable);
     }
 
-    // 搜索职位
+
     @GetMapping("/job_list/search")
     public Page<JobDTO> searchJobs(
             @RequestParam String keyword,
@@ -84,7 +84,7 @@ public class JobSeekerController {
         return new ResponseEntity<>(review, HttpStatus.CREATED);
     }
 
-    //Jobseeker 获取自己提交的申请（分页）
+
     //GET /api/me/applications?status=0&page=0&size=10&sort=appliedAt,desc
     @GetMapping("/applications")
     @PreAuthorize("hasRole('CANDIDATE')")
@@ -93,7 +93,7 @@ public class JobSeekerController {
             Pageable pageable,
             Authentication auth) {
 
-        // 项目里 userId 存在 auth.getName()（字符串），转换为 Long
+
         Long userId = Long.valueOf(auth.getName());
         Page<ApplicationBriefResponse> page = jobseekerApplicationService.listMine(userId, status, pageable);
         return ResponseEntity.ok(page);

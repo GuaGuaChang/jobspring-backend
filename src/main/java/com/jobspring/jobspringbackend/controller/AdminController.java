@@ -101,7 +101,7 @@ public class AdminController {
         return reviewService.getReviewById(id);
     }
 
-    // 指定公司查看（会做归属校验）
+
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/companies/{companyId}/applications")
     public ResponseEntity<Page<ApplicationBriefResponse>> listByCompany(
@@ -117,7 +117,7 @@ public class AdminController {
         return ResponseEntity.ok(page);
     }
 
-    // 下线岗位（快捷端点，可选）
+
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/companies/{companyId}/jobs/{jobId}/invalid")
     public ResponseEntity<Void> deactivate(@PathVariable Long companyId,
@@ -148,7 +148,7 @@ public class AdminController {
         return ResponseEntity.ok(review);
     }
 
-    // 升 HR（可选绑定公司），返回 204
+
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{userId}/make-hr")
     public ResponseEntity<Void> makeHr(@PathVariable Long userId,
@@ -157,7 +157,7 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
-    // Admin 通用搜索：q 在多字段里 OR 匹配，分页/排序
+
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/jobs")
     public ResponseEntity<Page<JobSearchResponse>> search(

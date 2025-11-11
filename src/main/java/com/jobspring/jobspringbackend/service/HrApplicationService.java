@@ -18,16 +18,16 @@ import java.util.Set;
 public class HrApplicationService {
 
     private final ApplicationRepository applicationRepository;
-    private final HrCompanyService hrCompanyService; // A 方案；如果是 B 方案，就注入 UserRepository 等
+    private final HrCompanyService hrCompanyService;
 
     public Page<ApplicationBriefResponse> listCompanyApplications(
             Long hrUserId,
-            Long companyId,     // 可选：前端传了就校验；不传就自动推断
-            Long jobId,         // 可选
-            Integer status,     // 可选
+            Long companyId,
+            Long jobId,
+            Integer status,
             Pageable pageable
     ) {
-        // 允许两种用法：1) 不传 companyId → 从 HR 绑定信息推断；2) 传 companyId → 校验归属
+
         final Long effectiveCompanyId = (companyId == null)
                 ? hrCompanyService.findCompanyIdByUserId(hrUserId)
                 : validateAndReturn(hrUserId, companyId);
@@ -63,11 +63,11 @@ public class HrApplicationService {
             throw new IllegalArgumentException("Illegal application status：" + newStatus);
         }
 
-        // 取出申请 + 关联的 job & company
+
         Application app = applicationRepository.findByIdWithJobAndCompany(applicationId)
                 .orElseThrow(() -> new EntityNotFoundException("Application not found"));
 
-        // HR 归属校验：只能改自己公司的申请
+
         Long hrCompanyId = hrCompanyService.findCompanyIdByUserId(hrUserId);
         Long appCompanyId = app.getJob().getCompany().getId();
         if (!appCompanyId.equals(hrCompanyId)) {
@@ -78,7 +78,7 @@ public class HrApplicationService {
             throw new IllegalStateException("This position is no longer valid and the application status cannot be modified");
         }
 
-        // 更新状态
+
         app.setStatus(newStatus);
 
         return toBrief(app);

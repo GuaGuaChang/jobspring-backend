@@ -20,8 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
 
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 
 import java.math.BigDecimal;
@@ -44,7 +44,7 @@ public class HrJobService {
 
     @Transactional(readOnly = true)
     public Page<HrJobResponse> search(Long hrUserId, String q, Pageable pageable) {
-        // 1) 找到 HR 的公司
+
         User u = userRepository.findWithCompanyById(hrUserId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
         if (u.getCompany() == null) {
@@ -52,10 +52,10 @@ public class HrJobService {
         }
         Long companyId = u.getCompany().getId();
 
-        // 2) 规格（限定公司 + 通用搜索）
+
         Specification<Job> spec = (root, query, cb) -> {
             List<Predicate> all = new ArrayList<>();
-            // 公司限定
+
             all.add(cb.equal(root.get("company").get("id"), companyId));
 
             if (StringUtils.hasText(q)) {
@@ -70,13 +70,13 @@ public class HrJobService {
                     String kwLower = "%" + t.toLowerCase() + "%";
                     List<Predicate> orFields = new ArrayList<>();
 
-                    // 文本字段（title/location/company.name 用 lower；description 是 LOB，不用 lower）
+
                     orFields.add(cb.like(cb.lower(root.get("title")), kwLower));
                     orFields.add(cb.like(root.get("description").as(String.class), "%" + t + "%")); // 修法2
                     orFields.add(cb.like(cb.lower(root.get("location")), kwLower));
                     orFields.add(cb.like(cb.lower(companyJoin.get("name")), kwLower));
 
-                    // 纯数字：id / status / 薪资覆盖
+
                     if (t.matches("\\d+")) {
                         long asLong = Long.parseLong(t);
                         orFields.add(cb.equal(root.get("id"), asLong));
@@ -90,13 +90,13 @@ public class HrJobService {
                         orFields.add(cb.and(lowerOk, upperOk));
                     }
 
-                    // 用工类型关键词 → employmentType
+
                     Integer et = mapEmploymentType(t);
                     if (et != null) {
                         orFields.add(cb.equal(root.get("employmentType"), et));
                     }
 
-                    // 日期：2025-10-10 / 2025-10-10T15:12:00
+
                     LocalDateTime[] range = tryParseDateOrDateTime(t);
                     if (range != null) {
                         orFields.add(cb.between(root.get("postedAt"), range[0], range[1]));
@@ -133,9 +133,7 @@ public class HrJobService {
         return null;
     }
 
-    /**
-     * "2025-10-10" → 当天范围；"2025-10-10T15:12:00" → ±1 分钟范围（可按需调整）
-     */
+
     private LocalDateTime[] tryParseDateOrDateTime(String t) {
         try {
             LocalDate d = LocalDate.parse(t);
@@ -153,17 +151,15 @@ public class HrJobService {
         return null;
     }
 
-    //供编辑页使用：拿到完整的 Job 详情（并校验属于当前 HR 的公司）
 
     public JobResponse getJobForEdit(Long companyId, Long jobId) {
         Job job = jobRepository.findByIdAndCompanyId(jobId, companyId)
                 .orElseThrow(() -> new NotFoundException("Job not found or not under your company"));
 
 
-        // 映射到 DTO（也可以用 MapStruct）
         JobResponse r = new JobResponse();
         r.setId(job.getId());
-        r.setCompanyId(job.getCompany().getId()); // 或 job.getCompanyId()
+        r.setCompanyId(job.getCompany().getId()); //  job.getCompanyId()
         r.setTitle(job.getTitle());
         r.setEmploymentType(job.getEmploymentType());
         r.setSalaryMin(job.getSalaryMin());
