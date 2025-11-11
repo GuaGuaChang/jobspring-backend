@@ -53,14 +53,12 @@ public class ApplicationService {
     @Transactional
     public Long apply(Long jobId, Long userId, ApplicationDTO form, MultipartFile file) {
 
-        Job job = jobRepo.findById(jobId)
-                .orElseThrow(() -> new EntityNotFoundException("Job not found"));
+        Job job = jobRepo.findById(jobId).orElseThrow(() -> new EntityNotFoundException("Job not found"));
         if (job.getStatus() != 0) {
             throw new IllegalStateException("Job inactive");
         }
 
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        User user = userRepo.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found"));
         if (appRepo.existsByJobAndUser(job, user)) {
             throw new IllegalArgumentException("Already applied");
         }
@@ -77,8 +75,7 @@ public class ApplicationService {
         String resumeUrlToSave = null;
 
 
-        if (user.getProfile() != null && user.getProfile().getFileUrl() != null
-                && !user.getProfile().getFileUrl().isBlank()) {
+        if (user.getProfile() != null && user.getProfile().getFileUrl() != null && !user.getProfile().getFileUrl().isBlank()) {
             resumeUrlToSave = user.getProfile().getFileUrl();
 
             app.setProfile(user.getProfile());
@@ -87,9 +84,7 @@ public class ApplicationService {
             if (file != null && !file.isEmpty()) {
                 validateFile(file);
                 try {
-                    String ct = Optional.ofNullable(file.getContentType())
-                            .filter(s -> !s.isBlank())
-                            .orElse("application/octet-stream");
+                    String ct = Optional.ofNullable(file.getContentType()).filter(s -> !s.isBlank()).orElse("application/octet-stream");
                     String base64 = java.util.Base64.getEncoder().encodeToString(file.getBytes());
                     resumeUrlToSave = "data:" + ct + ";base64," + base64;
                 } catch (IOException e) {
@@ -110,15 +105,7 @@ public class ApplicationService {
         app.setResumeUrl(resumeUrlToSave);
         var saved = appRepo.save(app);
 
-        publisher.publishEvent(new ApplicationSubmittedEvent(
-                saved.getId(),
-                job.getId(),
-                job.getCompany().getId(),
-                job.getTitle(),
-                user.getId(),
-                user.getFullName(),
-                user.getEmail()
-        ));
+        publisher.publishEvent(new ApplicationSubmittedEvent(saved.getId(), job.getId(), job.getCompany().getId(), job.getTitle(), user.getId(), user.getFullName(), user.getEmail()));
 
         return app.getId();
     }
@@ -126,25 +113,21 @@ public class ApplicationService {
     private void validateFile(MultipartFile f) {
         if (f.getSize() > 10 * 1024 * 1024) throw new IllegalArgumentException("File too large");
         String ct = Optional.ofNullable(f.getContentType()).orElse("");
-        if (!(ct.equals("application/pdf") || ct.equals("application/zip")
-                || ct.startsWith("image/") || ct.equals("application/msword")
-                || ct.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) {
+        if (!(ct.equals("application/pdf") || ct.equals("application/zip") || ct.startsWith("image/") || ct.equals("application/msword") || ct.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) {
             throw new IllegalArgumentException("Unsupported file type");
         }
     }
 
     public ApplicationDetailResponse getApplicationDetailForCompanyMember(Long userId, Long applicationId) {
 
-        Application app = applicationRepository.findByIdWithJobAndCompany(applicationId)
-                .orElseThrow(() -> new EntityNotFoundException("Application not found"));
+        Application app = applicationRepository.findByIdWithJobAndCompany(applicationId).orElseThrow(() -> new EntityNotFoundException("Application not found"));
 
         Long jobCompanyId = app.getJob().getCompany().getId();
 
         Long userCompanyId = findCompanyIdForUser(userId);
 
         if (!jobCompanyId.equals(userCompanyId)) {
-            throw new org.springframework.security.access.AccessDeniedException(
-                    "Application does not belong to your company");
+            throw new org.springframework.security.access.AccessDeniedException("Application does not belong to your company");
         }
 
 
@@ -153,9 +136,7 @@ public class ApplicationService {
 
 
     private Long findCompanyIdForUser(Long userId) {
-        return memberRepo.findCompanyIdByHrUserId(userId)
-                .orElseThrow(() -> new org.springframework.security.access.AccessDeniedException(
-                        "Not HR or no company bound."));
+        return memberRepo.findCompanyIdByHrUserId(userId).orElseThrow(() -> new org.springframework.security.access.AccessDeniedException("Not HR or no company bound."));
     }
 
     private ApplicationDetailResponse toDetail(Application a) {

@@ -99,8 +99,7 @@ public class AdminService {
     @Transactional
     public void makeHr(Long userId, PromoteToHrRequest req) {
 
-        User u = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        User u = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         if (Boolean.FALSE.equals(u.getIsActive())) {
             throw new IllegalStateException("User is inactive");
@@ -120,8 +119,7 @@ public class AdminService {
         boolean overwrite = req == null || req.getOverwriteCompany() == null || req.getOverwriteCompany();
 
         if (req != null && req.getCompanyId() != null) {
-            targetCompany = companyRepository.findById(req.getCompanyId())
-                    .orElseThrow(() -> new EntityNotFoundException("Company not found"));
+            targetCompany = companyRepository.findById(req.getCompanyId()).orElseThrow(() -> new EntityNotFoundException("Company not found"));
             if (u.getCompany() == null || overwrite) {
                 u.setCompany(targetCompany);
             }
@@ -140,9 +138,7 @@ public class AdminService {
 
     private void upsertHrMembership(User user, Company company, boolean overwrite) {
 
-        CompanyMember cm = companyMemberRepository
-                .findFirstByUserIdAndRole(user.getId(), "HR")
-                .orElse(null);
+        CompanyMember cm = companyMemberRepository.findFirstByUserIdAndRole(user.getId(), "HR").orElse(null);
 
         if (cm == null) {
 
@@ -172,9 +168,7 @@ public class AdminService {
             Join<Object, Object> companyJoin = root.join("company", JoinType.LEFT);
 
 
-            String[] tokens = Arrays.stream(q.trim().split("\\s+"))
-                    .filter(StringUtils::hasText)
-                    .toArray(String[]::new);
+            String[] tokens = Arrays.stream(q.trim().split("\\s+")).filter(StringUtils::hasText).toArray(String[]::new);
 
 
             List<Predicate> andPerToken = new ArrayList<>();
@@ -227,18 +221,7 @@ public class AdminService {
     }
 
     private JobSearchResponse toResp(Job j) {
-        return new JobSearchResponse(
-                j.getId(),
-                j.getCompany() != null ? j.getCompany().getId() : null,
-                j.getCompany() != null ? j.getCompany().getName() : null,
-                j.getTitle(),
-                j.getLocation(),
-                j.getEmploymentType(),
-                j.getSalaryMin(),
-                j.getSalaryMax(),
-                j.getStatus(),
-                j.getPostedAt()
-        );
+        return new JobSearchResponse(j.getId(), j.getCompany() != null ? j.getCompany().getId() : null, j.getCompany() != null ? j.getCompany().getName() : null, j.getTitle(), j.getLocation(), j.getEmploymentType(), j.getSalaryMin(), j.getSalaryMax(), j.getStatus(), j.getPostedAt());
     }
 
     private Integer mapEmploymentType(String t) {
@@ -253,19 +236,13 @@ public class AdminService {
     private LocalDateTime[] tryParseDateOrDateTime(String t) {
         try {
             LocalDate d = LocalDate.parse(t);
-            return new LocalDateTime[]{
-                    d.atStartOfDay(),
-                    d.plusDays(1).atStartOfDay().minusNanos(1)
-            };
+            return new LocalDateTime[]{d.atStartOfDay(), d.plusDays(1).atStartOfDay().minusNanos(1)};
         } catch (DateTimeParseException ignore) {
         }
         try {
             LocalDateTime dt = LocalDateTime.parse(t);
 
-            return new LocalDateTime[]{
-                    dt.minusMinutes(1),
-                    dt.plusMinutes(1)
-            };
+            return new LocalDateTime[]{dt.minusMinutes(1), dt.plusMinutes(1)};
         } catch (DateTimeParseException ignore) {
         }
         return null;

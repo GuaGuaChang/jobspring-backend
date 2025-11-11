@@ -23,10 +23,8 @@ public class JobFavoriteService {
 
     @Transactional
     public void add(Long userId, Long jobId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new EntityNotFoundException("Job not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found"));
+        Job job = jobRepository.findById(jobId).orElseThrow(() -> new EntityNotFoundException("Job not found"));
         if (job.getStatus() != null && job.getStatus() != 0) {
             throw new IllegalStateException("Job inactive");
         }
@@ -40,34 +38,29 @@ public class JobFavoriteService {
 
     @Transactional
     public void remove(Long userId, Long jobId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new EntityNotFoundException("Job not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found"));
+        Job job = jobRepository.findById(jobId).orElseThrow(() -> new EntityNotFoundException("Job not found"));
         favoriteRepository.deleteByUserAndJob(user, job);
     }
 
     public boolean isFavorited(Long userId, Long jobId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new EntityNotFoundException("Job not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found"));
+        Job job = jobRepository.findById(jobId).orElseThrow(() -> new EntityNotFoundException("Job not found"));
         return favoriteRepository.existsByUserAndJob(user, job);
     }
 
     public Page<FavoriteJobResponse> list(Long userId, Pageable pageable) {
-        return favoriteRepository.findByUserId(userId, pageable)
-                .map(f -> {
-                    FavoriteJobResponse r = new FavoriteJobResponse();
-                    r.setJobId(f.getJob().getId());
-                    r.setTitle(f.getJob().getTitle());
-                    r.setCompany(f.getJob().getCompany() != null ? f.getJob().getCompany().getName() : null);
-                    r.setLocation(f.getJob().getLocation());
-                    r.setEmploymentType(f.getJob().getEmploymentType());
-                    r.setStatus(f.getJob().getStatus());
-                    r.setFavoritedAt(f.getCreatedAt());
-                    return r;
-                });
+        return favoriteRepository.findByUserId(userId, pageable).map(f -> {
+            FavoriteJobResponse r = new FavoriteJobResponse();
+            r.setJobId(f.getJob().getId());
+            r.setTitle(f.getJob().getTitle());
+            r.setCompany(f.getJob().getCompany() != null ? f.getJob().getCompany().getName() : null);
+            r.setLocation(f.getJob().getLocation());
+            r.setEmploymentType(f.getJob().getEmploymentType());
+            r.setStatus(f.getJob().getStatus());
+            r.setFavoritedAt(f.getCreatedAt());
+            return r;
+        });
     }
 
     public long countByJob(Long jobId) {

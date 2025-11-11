@@ -18,9 +18,7 @@ public class JobseekerApplicationService {
 
     @Transactional(readOnly = true)
     public Page<ApplicationBriefResponse> listMine(Long userId, Integer status, Pageable pageable) {
-        Page<Application> page = (status == null)
-                ? applicationRepository.findMyApplications(userId, pageable)
-                : applicationRepository.findMyApplicationsByStatus(userId, status, pageable);
+        Page<Application> page = (status == null) ? applicationRepository.findMyApplications(userId, pageable) : applicationRepository.findMyApplicationsByStatus(userId, status, pageable);
 
         return page.map(this::toBrief);
     }

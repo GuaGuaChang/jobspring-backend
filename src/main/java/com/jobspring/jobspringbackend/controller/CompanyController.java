@@ -32,21 +32,12 @@ public class CompanyController {
     }
 
     @GetMapping("/{companyId}/jobs")
-    public ResponseEntity<Page<JobResponse>> listCompanyJobs(
-            @PathVariable Long companyId,
-            @RequestParam(required = false, defaultValue = "0") Integer status,
-            Pageable pageable
-    ) {
-        return ResponseEntity.ok(
-                companyService.listCompanyJobs(companyId, status, pageable)
-        );
+    public ResponseEntity<Page<JobResponse>> listCompanyJobs(@PathVariable Long companyId, @RequestParam(required = false, defaultValue = "0") Integer status, Pageable pageable) {
+        return ResponseEntity.ok(companyService.listCompanyJobs(companyId, status, pageable));
     }
 
     @GetMapping("/{companyId}/reviews")
-    public ResponseEntity<Page<CompanyReviewDTO>> getCompanyReviews(
-            @PathVariable Long companyId,
-            @PageableDefault(size = 10, sort = "submittedAt", direction = Sort.Direction.DESC) Pageable pageable
-    ) {
+    public ResponseEntity<Page<CompanyReviewDTO>> getCompanyReviews(@PathVariable Long companyId, @PageableDefault(size = 10, sort = "submittedAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Page<CompanyReviewDTO> reviews = companyService.getCompanyReviews(companyId, pageable);
         return ResponseEntity.ok(reviews);
     }

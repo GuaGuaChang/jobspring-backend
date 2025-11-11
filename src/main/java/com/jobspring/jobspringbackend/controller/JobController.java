@@ -23,25 +23,21 @@ public class JobController {
 
     @PreAuthorize("hasAnyRole('HR')")
     @PostMapping("/companies/{companyId}/jobs")
-    public ResponseEntity<JobResponse> create(@PathVariable Long companyId,
-                                              @Valid @RequestBody JobCreateRequest req) {
+    public ResponseEntity<JobResponse> create(@PathVariable Long companyId, @Valid @RequestBody JobCreateRequest req) {
         JobResponse res = jobService.createJob(companyId, req);
         return ResponseEntity.created(URI.create("/api/hr/jobs/" + res.getId())).body(res);
     }
 
     @PreAuthorize("hasAnyRole('HR')")
     @PatchMapping("/companies/{companyId}/jobs/{jobId}")
-    public ResponseEntity<JobResponse> update(@PathVariable Long companyId,
-                                              @PathVariable Long jobId,
-                                              @Valid @RequestBody JobUpdateRequest req) {
+    public ResponseEntity<JobResponse> update(@PathVariable Long companyId, @PathVariable Long jobId, @Valid @RequestBody JobUpdateRequest req) {
         JobResponse res = jobService.replaceJob(companyId, jobId, req);
         return ResponseEntity.ok(res);
     }
 
     @PreAuthorize("hasAnyRole('HR')")
     @PostMapping("/companies/{companyId}/jobs/{jobId}/invalid")
-    public ResponseEntity<Void> deactivate(@PathVariable Long companyId,
-                                           @PathVariable Long jobId) {
+    public ResponseEntity<Void> deactivate(@PathVariable Long companyId, @PathVariable Long jobId) {
         jobService.deactivateJob(companyId, jobId);
         return ResponseEntity.noContent().build();
     }
@@ -49,9 +45,7 @@ public class JobController {
 
     @PreAuthorize("hasRole('HR')")
     @GetMapping("/companies/jobs")
-    public ResponseEntity<Page<JobResponse>> list(Pageable pageable,
-                                                  @RequestParam(required = false) Integer status,
-                                                  Authentication auth) {
+    public ResponseEntity<Page<JobResponse>> list(Pageable pageable, @RequestParam(required = false) Integer status, Authentication auth) {
         Long userId = Long.valueOf(auth.getName());
         Long companyId = jobService.findCompanyIdByUserId(userId);
         return ResponseEntity.ok(jobService.listJobs(companyId, status, pageable));

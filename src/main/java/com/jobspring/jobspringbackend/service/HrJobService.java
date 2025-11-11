@@ -45,8 +45,7 @@ public class HrJobService {
     @Transactional(readOnly = true)
     public Page<HrJobResponse> search(Long hrUserId, String q, Pageable pageable) {
 
-        User u = userRepository.findWithCompanyById(hrUserId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        User u = userRepository.findWithCompanyById(hrUserId).orElseThrow(() -> new EntityNotFoundException("User not found"));
         if (u.getCompany() == null) {
             throw new EntityNotFoundException("No company bound for this HR");
         }
@@ -60,9 +59,7 @@ public class HrJobService {
 
             if (StringUtils.hasText(q)) {
                 Join<Object, Object> companyJoin = root.join("company", JoinType.LEFT);
-                String[] tokens = Arrays.stream(q.trim().split("\\s+"))
-                        .filter(StringUtils::hasText)
-                        .toArray(String[]::new);
+                String[] tokens = Arrays.stream(q.trim().split("\\s+")).filter(StringUtils::hasText).toArray(String[]::new);
 
                 List<Predicate> andPerToken = new ArrayList<>();
 
@@ -111,18 +108,7 @@ public class HrJobService {
             return cb.and(all.toArray(new Predicate[0]));
         };
 
-        return jobRepository.findAll(spec, pageable).map(j ->
-                new HrJobResponse(
-                        j.getId(),
-                        j.getTitle(),
-                        j.getLocation(),
-                        j.getEmploymentType(),
-                        j.getSalaryMin(),
-                        j.getSalaryMax(),
-                        j.getStatus(),
-                        j.getPostedAt()
-                )
-        );
+        return jobRepository.findAll(spec, pageable).map(j -> new HrJobResponse(j.getId(), j.getTitle(), j.getLocation(), j.getEmploymentType(), j.getSalaryMin(), j.getSalaryMax(), j.getStatus(), j.getPostedAt()));
     }
 
     private Integer mapEmploymentType(String t) {
@@ -137,10 +123,7 @@ public class HrJobService {
     private LocalDateTime[] tryParseDateOrDateTime(String t) {
         try {
             LocalDate d = LocalDate.parse(t);
-            return new LocalDateTime[]{
-                    d.atStartOfDay(),
-                    d.plusDays(1).atStartOfDay().minusNanos(1)
-            };
+            return new LocalDateTime[]{d.atStartOfDay(), d.plusDays(1).atStartOfDay().minusNanos(1)};
         } catch (DateTimeParseException ignore) {
         }
         try {
@@ -153,8 +136,7 @@ public class HrJobService {
 
 
     public JobResponse getJobForEdit(Long companyId, Long jobId) {
-        Job job = jobRepository.findByIdAndCompanyId(jobId, companyId)
-                .orElseThrow(() -> new NotFoundException("Job not found or not under your company"));
+        Job job = jobRepository.findByIdAndCompanyId(jobId, companyId).orElseThrow(() -> new NotFoundException("Job not found or not under your company"));
 
 
         JobResponse r = new JobResponse();
@@ -172,7 +154,6 @@ public class HrJobService {
     }
 
     public Long findCompanyIdByUserId(Long userId) {
-        return companyMemberRepository.findCompanyIdByHrUserId(userId)
-                .orElseThrow(() -> new NotFoundException("HR is not bound to any company"));
+        return companyMemberRepository.findCompanyIdByHrUserId(userId).orElseThrow(() -> new NotFoundException("HR is not bound to any company"));
     }
 }

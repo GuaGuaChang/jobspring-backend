@@ -37,8 +37,7 @@ public class ProfileService {
     private UserRepository userRepository;
 
     public ProfileResponseDTO getCompleteProfile(Long userId) {
-        Profile profile = profileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
+        Profile profile = profileRepository.findByUserId(userId).orElseThrow(() -> new RuntimeException("Profile not found"));
 
         List<ProfileEducation> educations = educationRepository.findByProfileId(profile.getId());
 
@@ -53,8 +52,7 @@ public class ProfileService {
     public ProfileUpdateResponseDTO createOrUpdateProfile(Long userId, ProfileRequestDTO request) {
 
         try {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+            User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
             Profile profile = handleProfile(user, request.getProfile());
             Profile savedProfile = profileRepository.save(profile);
@@ -72,10 +70,7 @@ public class ProfileService {
         }
     }
 
-    private ProfileResponseDTO convertToResponseDTO(Profile profile,
-                                                    List<ProfileEducation> educations,
-                                                    List<ProfileExperience> experiences,
-                                                    List<UserSkill> skills) {
+    private ProfileResponseDTO convertToResponseDTO(Profile profile, List<ProfileEducation> educations, List<ProfileExperience> experiences, List<UserSkill> skills) {
         ProfileResponseDTO response = new ProfileResponseDTO();
 
         ProfileDTO profileDTO = new ProfileDTO();
@@ -126,12 +121,11 @@ public class ProfileService {
     }
 
     private Profile handleProfile(User user, ProfileDTO profileDTO) {
-        Profile profile = profileRepository.findByUser(user)
-                .orElseGet(() -> {
-                    Profile newProfile = new Profile();
-                    newProfile.setUser(user);
-                    return newProfile;
-                });
+        Profile profile = profileRepository.findByUser(user).orElseGet(() -> {
+            Profile newProfile = new Profile();
+            newProfile.setUser(user);
+            return newProfile;
+        });
 
         profile.setSummary(profileDTO.getSummary());
         profile.setVisibility(profileDTO.getVisibility());
@@ -197,22 +191,16 @@ public class ProfileService {
         }
         List<UserSkillDTO> deduped = new ArrayList<>(byId.values());
 
-        List<Long> ids = deduped.stream()
-                .map(UserSkillDTO::getSkillId)
-                .filter(Objects::nonNull)
-                .toList();
-        Map<Long, Skill> skillMap = skillRepository.findAllById(ids).stream()
-                .collect(Collectors.toMap(Skill::getId, s -> s));
+        List<Long> ids = deduped.stream().map(UserSkillDTO::getSkillId).filter(Objects::nonNull).toList();
+        Map<Long, Skill> skillMap = skillRepository.findAllById(ids).stream().collect(Collectors.toMap(Skill::getId, s -> s));
         List<Long> missing = ids.stream().filter(id -> !skillMap.containsKey(id)).toList();
         if (!missing.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Unknown skill_id(s): " + missing);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown skill_id(s): " + missing);
         }
 
         userSkillRepository.deleteByUserId(userId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + userId));
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + userId));
 
         for (UserSkillDTO dto : deduped) {
             Skill skill = skillMap.get(dto.getSkillId());

@@ -22,8 +22,7 @@ public class ApplicationController {
     private final ApplicationService applicationService;
 
     @PostMapping(value = "/{jobId}/applications", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> apply(@PathVariable Long jobId, @ModelAttribute ApplicationDTO form,
-                                      @RequestParam(value = "file", required = false) MultipartFile file, Authentication auth) {
+    public ResponseEntity<Void> apply(@PathVariable Long jobId, @ModelAttribute ApplicationDTO form, @RequestParam(value = "file", required = false) MultipartFile file, Authentication auth) {
         Long userId = Long.valueOf(auth.getName());
         Long id = applicationService.apply(jobId, userId, form, file);
         return ResponseEntity.created(URI.create("/api/applications/" + id)).build();
@@ -31,10 +30,7 @@ public class ApplicationController {
 
     @PreAuthorize("hasAnyRole('HR')")
     @GetMapping("/{applicationId}")
-    public ResponseEntity<ApplicationDetailResponse> getApplicationDetail(
-            @PathVariable Long applicationId,
-            org.springframework.security.core.Authentication auth
-    ) {
+    public ResponseEntity<ApplicationDetailResponse> getApplicationDetail(@PathVariable Long applicationId, org.springframework.security.core.Authentication auth) {
         Long userId = Long.valueOf(auth.getName());
         ApplicationDetailResponse resp = applicationService.getApplicationDetailForCompanyMember(userId, applicationId);
         return ResponseEntity.ok(resp);

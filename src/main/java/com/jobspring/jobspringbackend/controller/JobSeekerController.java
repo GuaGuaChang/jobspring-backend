@@ -43,14 +43,9 @@ public class JobSeekerController {
 
 
     @GetMapping("/job_list")
-    public Page<JobDTO> getJobList(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "postedAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String direction) {
+    public Page<JobDTO> getJobList(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "postedAt") String sortBy, @RequestParam(defaultValue = "desc") String direction) {
 
-        Sort sort = direction.equalsIgnoreCase("asc") ?
-                Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Sort sort = direction.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return jobService.getJobSeekerJobs(pageable);
@@ -58,10 +53,7 @@ public class JobSeekerController {
 
 
     @GetMapping("/job_list/search")
-    public Page<JobDTO> searchJobs(
-            @RequestParam String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    public Page<JobDTO> searchJobs(@RequestParam String keyword, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("postedAt").descending());
         return jobService.searchJobSeekerJobs(keyword, pageable);
@@ -88,10 +80,7 @@ public class JobSeekerController {
     //GET /api/me/applications?status=0&page=0&size=10&sort=appliedAt,desc
     @GetMapping("/applications")
     @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<Page<ApplicationBriefResponse>> jobseekerApplications(
-            @RequestParam(required = false) Integer status,
-            Pageable pageable,
-            Authentication auth) {
+    public ResponseEntity<Page<ApplicationBriefResponse>> jobseekerApplications(@RequestParam(required = false) Integer status, Pageable pageable, Authentication auth) {
 
 
         Long userId = Long.valueOf(auth.getName());

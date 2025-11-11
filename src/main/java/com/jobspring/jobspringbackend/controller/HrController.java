@@ -32,15 +32,9 @@ public class HrController {
 
     @PreAuthorize("hasRole('HR')")
     @GetMapping("/applications")
-    public ResponseEntity<Page<ApplicationBriefResponse>> listMine(
-            @RequestParam(required = false) Long jobId,
-            @RequestParam(required = false) Integer status,
-            Pageable pageable,
-            Authentication auth
-    ) {
+    public ResponseEntity<Page<ApplicationBriefResponse>> listMine(@RequestParam(required = false) Long jobId, @RequestParam(required = false) Integer status, Pageable pageable, Authentication auth) {
         Long hrUserId = Long.parseLong(auth.getName());
-        Page<ApplicationBriefResponse> page = hrApplicationService
-                .listCompanyApplications(hrUserId, null, jobId, status, pageable);
+        Page<ApplicationBriefResponse> page = hrApplicationService.listCompanyApplications(hrUserId, null, jobId, status, pageable);
         return ResponseEntity.ok(page);
     }
 
@@ -55,14 +49,10 @@ public class HrController {
 
     @PostMapping("/applications/{applicationId}/status")
     @PreAuthorize("hasRole('HR')")
-    public ResponseEntity<ApplicationBriefResponse> updateStatus(
-            @PathVariable Long applicationId,
-            @RequestBody UpdateStatusBody body,
-            Authentication auth) {
+    public ResponseEntity<ApplicationBriefResponse> updateStatus(@PathVariable Long applicationId, @RequestBody UpdateStatusBody body, Authentication auth) {
 
         Long hrUserId = Long.valueOf(auth.getName());
-        ApplicationBriefResponse res =
-                hrApplicationService.updateStatus(hrUserId, applicationId, body.getStatus());
+        ApplicationBriefResponse res = hrApplicationService.updateStatus(hrUserId, applicationId, body.getStatus());
         return ResponseEntity.ok(res);
     }
 
@@ -82,19 +72,14 @@ public class HrController {
 
     @PreAuthorize("hasRole('HR')")
     @GetMapping("/jobs")
-    public ResponseEntity<Page<HrJobResponse>> search(
-            Authentication auth,
-            @RequestParam(required = false) String q,
-            Pageable pageable
-    ) {
+    public ResponseEntity<Page<HrJobResponse>> search(Authentication auth, @RequestParam(required = false) String q, Pageable pageable) {
         Long userId = Long.valueOf(auth.getName());
         return ResponseEntity.ok(hrJobService.search(userId, q, pageable));
     }
 
     @PreAuthorize("hasRole('HR')")
     @GetMapping("/jobs-detail/{jobId}")
-    public ResponseEntity<JobResponse> getJobDetailForEdit(@PathVariable Long jobId,
-                                                           Authentication auth) {
+    public ResponseEntity<JobResponse> getJobDetailForEdit(@PathVariable Long jobId, Authentication auth) {
         Long userId = Long.valueOf(auth.getName());
         Long companyId = hrJobService.findCompanyIdByUserId(userId);
         return ResponseEntity.ok(hrJobService.getJobForEdit(companyId, jobId));

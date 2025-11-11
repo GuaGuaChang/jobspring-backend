@@ -20,17 +20,9 @@ public class HrApplicationService {
     private final ApplicationRepository applicationRepository;
     private final HrCompanyService hrCompanyService;
 
-    public Page<ApplicationBriefResponse> listCompanyApplications(
-            Long hrUserId,
-            Long companyId,
-            Long jobId,
-            Integer status,
-            Pageable pageable
-    ) {
+    public Page<ApplicationBriefResponse> listCompanyApplications(Long hrUserId, Long companyId, Long jobId, Integer status, Pageable pageable) {
 
-        final Long effectiveCompanyId = (companyId == null)
-                ? hrCompanyService.findCompanyIdByUserId(hrUserId)
-                : validateAndReturn(hrUserId, companyId);
+        final Long effectiveCompanyId = (companyId == null) ? hrCompanyService.findCompanyIdByUserId(hrUserId) : validateAndReturn(hrUserId, companyId);
 
         Page<Application> page = applicationRepository.searchByCompany(effectiveCompanyId, jobId, status, pageable);
         return page.map(this::toBrief);
@@ -54,8 +46,7 @@ public class HrApplicationService {
         return r;
     }
 
-    private static final Set<Integer> ALLOWED =
-            Set.of(0, 1, 2, 3, 4); // 你的状态集合
+    private static final Set<Integer> ALLOWED = Set.of(0, 1, 2, 3, 4); // 你的状态集合
 
     @Transactional
     public ApplicationBriefResponse updateStatus(Long hrUserId, Long applicationId, Integer newStatus) {
@@ -64,8 +55,7 @@ public class HrApplicationService {
         }
 
 
-        Application app = applicationRepository.findByIdWithJobAndCompany(applicationId)
-                .orElseThrow(() -> new EntityNotFoundException("Application not found"));
+        Application app = applicationRepository.findByIdWithJobAndCompany(applicationId).orElseThrow(() -> new EntityNotFoundException("Application not found"));
 
 
         Long hrCompanyId = hrCompanyService.findCompanyIdByUserId(hrUserId);
