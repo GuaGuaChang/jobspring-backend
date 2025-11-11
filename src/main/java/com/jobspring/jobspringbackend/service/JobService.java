@@ -46,12 +46,13 @@ public class JobService {
     }
 
 
+    //avoid duplication1
     public Page<JobDTO> getJobSeekerJobs(Pageable pageable) {
         Page<Job> jobs = jobRepository.findByStatus(0, pageable);
         return jobs.map(this::convertToJobSeekerDTO);
     }
 
-
+    //avoid duplication2
     public Page<JobDTO> searchJobSeekerJobs(String keyword, Pageable pageable) {
         Page<Job> jobs = jobRepository.searchJobs(keyword, pageable);
         return jobs.map(this::convertToJobSeekerDTO);
@@ -81,7 +82,7 @@ public class JobService {
         return dto;
     }
 
-
+    //avoid duplication3
     private String getEmploymentTypeName(Integer type) {
         if (type == null) return "未知";
         return switch (type) {
@@ -92,7 +93,7 @@ public class JobService {
         };
     }
 
-
+    //avoid duplication4
     private List<String> getJobTags(Long jobId) {
         return skillRepository.findSkillNamesByJobId(jobId);
     }
@@ -111,6 +112,7 @@ public class JobService {
         }
     }
 
+    //avoid duplication5
     private JobResponse toResponse(Job j) {
         JobResponse r = new JobResponse();
         r.setId(j.getId());
@@ -149,7 +151,7 @@ public class JobService {
         return toResponse(j);
     }
 
-
+    //avoid duplication6
     @Transactional
     public JobResponse replaceJob(Long companyId, Long jobId, JobUpdateRequest req) {
 
@@ -192,7 +194,7 @@ public class JobService {
         //applicationRepository.updateStatusByJobId(jobId, 4);
     }
 
-
+    //avoid duplication7
     public Page<JobResponse> listJobs(Long companyId, Integer status, Pageable pageable) {
         Page<Job> page = (status == null)
                 ? jobRepository.findByCompanyId(companyId, pageable)
