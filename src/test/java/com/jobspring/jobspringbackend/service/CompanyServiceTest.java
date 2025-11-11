@@ -140,6 +140,7 @@ class CompanyServiceTest {
         review.setRating(5);
         review.setPublicAt(LocalDateTime.now());
         review.setImageUrl("img.png");
+        review.setStatus(1);
 
         Application app = new Application();
         Job job = new Job();

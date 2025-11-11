@@ -30,7 +30,6 @@ public class HrController {
 
     private final HrJobService hrJobService;
 
-    // 方式一：自动取 HR 自己的公司
     @PreAuthorize("hasRole('HR')")
     @GetMapping("/applications")
     public ResponseEntity<Page<ApplicationBriefResponse>> listMine(
@@ -45,23 +44,7 @@ public class HrController {
         return ResponseEntity.ok(page);
     }
 
-   /* // 方式二：显式指定公司（会做归属校验）
-    @PreAuthorize("hasRole('HR')")
-    @GetMapping("/companies/{companyId}/applications")
-    public ResponseEntity<Page<ApplicationBriefResponse>> listByCompany(
-            @PathVariable Long companyId,
-            @RequestParam(required = false) Long jobId,
-            @RequestParam(required = false) Integer status,
-            Pageable pageable,
-            Authentication auth
-    ) {
-        Long hrUserId = Long.parseLong(auth.getName());
-        Page<ApplicationBriefResponse> page = hrApplicationService
-                .listCompanyApplications(hrUserId, companyId, jobId, status, pageable);
-        return ResponseEntity.ok(page);
-    }*/
 
-    // 获取当前 HR 所在公司 ID
     @GetMapping("/company-id")
     @PreAuthorize("hasRole('HR')")
     public ResponseEntity<Map<String, Long>> myCompanyId(Authentication auth) {
@@ -70,7 +53,6 @@ public class HrController {
         return ResponseEntity.ok(Map.of("companyId", companyId));
     }
 
-    //更新某个申请状态
     @PostMapping("/applications/{applicationId}/status")
     @PreAuthorize("hasRole('HR')")
     public ResponseEntity<ApplicationBriefResponse> updateStatus(
@@ -90,7 +72,6 @@ public class HrController {
         private Integer status;
     }
 
-    // HR 获取自己公司的名字（仅名称）
     @PreAuthorize("hasRole('HR')")
     @GetMapping("/company-name")
     public ResponseEntity<String> myCompanyName(Authentication auth) {
@@ -99,7 +80,6 @@ public class HrController {
         return ResponseEntity.ok(name);
     }
 
-    // HR 搜索自己公司内的岗位（分页 + 排序）
     @PreAuthorize("hasRole('HR')")
     @GetMapping("/jobs")
     public ResponseEntity<Page<HrJobResponse>> search(
@@ -111,7 +91,6 @@ public class HrController {
         return ResponseEntity.ok(hrJobService.search(userId, q, pageable));
     }
 
-    //HR 查看“可编辑”的职位详情（用于编辑页回填）只允许查看本公司职位
     @PreAuthorize("hasRole('HR')")
     @GetMapping("/jobs-detail/{jobId}")
     public ResponseEntity<JobResponse> getJobDetailForEdit(@PathVariable Long jobId,

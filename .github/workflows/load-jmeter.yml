@@ -1,0 +1,35 @@
+name: Load Test - JMeter
+
+on:
+  pull_request: { branches: [ "master" ] }
+  workflow_dispatch:
+
+jobs:
+  jmeter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install JMeter (latest)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl unzip
+          curl -L https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.zip -o jmeter.zip
+          unzip -q jmeter.zip
+          sudo ln -s "$(pwd)/apache-jmeter-5.6.3/bin/jmeter" /usr/local/bin/jmeter
+          jmeter -v
+
+      - name: Run JMeter
+        run: |
+          mkdir -p jmeter-report
+          jmeter -n \
+            -t jmeter/JobSpring_Load_Test.jmx \
+            -l jmeter-report/results.jtl \
+            -e -o jmeter-report/html
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-report
+          path: jmeter-report/html
+          if-no-files-found: warn

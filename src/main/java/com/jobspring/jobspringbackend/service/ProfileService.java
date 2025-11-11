@@ -37,20 +37,15 @@ public class ProfileService {
     private UserRepository userRepository;
 
     public ProfileResponseDTO getCompleteProfile(Long userId) {
-        // 获取基础profile信息
         Profile profile = profileRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
 
-        // 获取教育经历
         List<ProfileEducation> educations = educationRepository.findByProfileId(profile.getId());
 
-        // 获取工作经历
         List<ProfileExperience> experiences = experienceRepository.findByProfileId(profile.getId());
 
-        // 获取技能
         List<UserSkill> skills = userSkillRepository.findByUserId(userId);
 
-        // 转换为DTO
         return convertToResponseDTO(profile, educations, experiences, skills);
     }
 
@@ -83,20 +78,16 @@ public class ProfileService {
                                                     List<UserSkill> skills) {
         ProfileResponseDTO response = new ProfileResponseDTO();
 
-        // 设置profile信息
         ProfileDTO profileDTO = new ProfileDTO();
         profileDTO.setSummary(profile.getSummary());
         profileDTO.setVisibility(profile.getVisibility());
         profileDTO.setFileUrl(profile.getFileUrl());
         response.setProfile(profileDTO);
 
-        // 设置教育经历
         response.setEducation(educations.stream().map(this::convertToEducationDTO).collect(Collectors.toList()));
 
-        // 设置工作经历
         response.setExperience(experiences.stream().map(this::convertToExperienceDTO).collect(Collectors.toList()));
 
-        // 设置技能
         response.setSkills(skills.stream().map(this::convertToUserSkillDTO).collect(Collectors.toList()));
 
         return response;
@@ -135,15 +126,13 @@ public class ProfileService {
     }
 
     private Profile handleProfile(User user, ProfileDTO profileDTO) {
-        // 直接使用User对象查询
         Profile profile = profileRepository.findByUser(user)
                 .orElseGet(() -> {
                     Profile newProfile = new Profile();
-                    newProfile.setUser(user);  // 设置关联用户
+                    newProfile.setUser(user);
                     return newProfile;
                 });
 
-        // 更新profile信息
         profile.setSummary(profileDTO.getSummary());
         profile.setVisibility(profileDTO.getVisibility());
         profile.setFileUrl(profileDTO.getFileUrl());
@@ -195,7 +184,7 @@ public class ProfileService {
     }
 
     private void handleSkills(Long userId, List<UserSkillDTO> skillDTOs) {
-        if (skillDTOs == null) return;             // 传 null 表示不改动，保留旧数据
+        if (skillDTOs == null) return;
         if (skillDTOs.isEmpty()) {
             return;
         }
@@ -203,7 +192,7 @@ public class ProfileService {
         Map<Long, UserSkillDTO> byId = new LinkedHashMap<>();
         for (UserSkillDTO dto : skillDTOs) {
             if (dto.getSkillId() != null) {
-                byId.put(dto.getSkillId(), dto); // 后来的覆盖前面的，或可自定义策略
+                byId.put(dto.getSkillId(), dto);
             }
         }
         List<UserSkillDTO> deduped = new ArrayList<>(byId.values());
